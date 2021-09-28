@@ -1,0 +1,18 @@
+{
+    "Insert heading level 1": {
+        "prefix": "heading1",
+        "body": [
+            "# ${1:${TM_SELECTED_TEXT}}$0"
+        ],
+        "description": "Insert heading level 1"
+    },
+    "Mahal single file component": {
+        "prefix": "mhl",
+        "body": [
+            "<html>\n$0\n</html>\n",
+            "<script>\n\n</script>\n",
+            "<style>\n\n</style>\n"
+        ],
+        "description": "Insert heading level 1"
+    }
+}

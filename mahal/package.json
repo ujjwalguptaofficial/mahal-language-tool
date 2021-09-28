@@ -1,0 +1,31 @@
+{
+    "name": "mahal",
+    "displayName": "mahal",
+    "description": "",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.60.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "snippets": [
+            {
+                "language": "mahal",
+                "path": "./snippets/snippets.json"
+            }
+        ],
+        "languages": [{
+            "id": "mahal",
+            "aliases": ["Mahal", "mahal"],
+            "extensions": [".mhl"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "mahal",
+            "scopeName": "source.mhl",
+            "path": "./syntaxes/mahal.tmLanguage.json"
+        }]
+    }
+}
