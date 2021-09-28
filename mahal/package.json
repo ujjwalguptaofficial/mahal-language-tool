@@ -6,6 +6,10 @@
     "engines": {
         "vscode": "^1.60.0"
     },
+    "activationEvents": [
+		"onLanguage:mahal"
+	],
+    "main": "language_service/dist/client.js",
     "categories": [
         "Programming Languages"
     ],
