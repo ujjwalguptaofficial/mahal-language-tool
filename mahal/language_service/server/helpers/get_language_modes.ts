@@ -1,8 +1,9 @@
 import { getLanguageService as getHTMLLanguageService } from "vscode-html-languageservice";
+// import {  as getJsLangService } from "vscode-typescript-languageservice";
 import { getCSSLanguageService } from "vscode-css-languageservice";
 import { getLanguageCache } from "./get_language_cache";
 import { ILanguageCache, ILanguageMode, ILanguageModeRange, ILanguageModes, IMahalDocumentRegion } from "../interfaces";
-import { getCSSMode, getHTMLMode } from "../lang_modes";
+import { getCSSMode, getHTMLMode, getJSMode } from "../lang_modes";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { getDocumentRegions } from "./get_document_regions";
 import { Range } from "vscode-languageserver";
@@ -10,6 +11,7 @@ import { Range } from "vscode-languageserver";
 export function getLanguageModes(): ILanguageModes {
     const htmlLanguageService = getHTMLLanguageService();
     const cssLanguageService = getCSSLanguageService();
+    // const cssLanguageService = getJsLangService();
 
     const documentRegions = getLanguageCache<IMahalDocumentRegion>(10, 60, document =>
         getDocumentRegions(htmlLanguageService, document)
@@ -21,6 +23,7 @@ export function getLanguageModes(): ILanguageModes {
     let modes = Object.create(null);
     modes['html'] = getHTMLMode(htmlLanguageService, documentRegions);
     modes['css'] = getCSSMode(cssLanguageService, documentRegions);
+    // modes['css'] = getJSMode(cssLanguageService, documentRegions);
 
     return {
         getModeAtPosition(
@@ -28,6 +31,7 @@ export function getLanguageModes(): ILanguageModes {
             position: Position
         ): ILanguageMode | undefined {
             const languageId = documentRegions.get(document).getLanguageAtPosition(position);
+            console.log("languageId", languageId);
             if (languageId) {
                 return modes[languageId];
             }

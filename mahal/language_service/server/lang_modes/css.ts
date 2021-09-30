@@ -18,6 +18,7 @@ export function getCSSMode(
 		doComplete(document: TextDocument, position: Position) {
 			const embedded = documentRegions.get(document).getEmbeddedDocument('css');
 			const stylesheet = cssLanguageService.parseStylesheet(embedded);
+			console.log("called css do complete", embedded.getText());
 			return cssLanguageService.doComplete(embedded, position, stylesheet);
 		},
 		onDocumentRemoved(_document: TextDocument) { /* nothing to do */ },

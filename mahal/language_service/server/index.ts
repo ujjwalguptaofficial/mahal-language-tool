@@ -8,10 +8,9 @@ const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
 let languageModes: ILanguageModes;
-console.log("languageModes", languageModes);
 
 connection.onInitialize(params => {
-    connection.console.log('initialized called');
+    console.log('initialized called');
     languageModes = getLanguageModes()
     documents.onDidClose(e => {
         languageModes.onDocumentRemoved(e.document);
@@ -29,6 +28,11 @@ connection.onInitialize(params => {
             }
         }
     }
+});
+
+connection.onDidChangeWatchedFiles(_change => {
+    // Monitored files have change in VSCode
+    connection.console.log('We received an file change event');
 });
 
 connection.onDidChangeConfiguration(_change => {
@@ -61,7 +65,7 @@ async function validateTextDocument(textDocument: TextDocument) {
     try {
         const version = textDocument.version;
         const diagnostics: Diagnostic[] = [];
-        if (textDocument.languageId === 'html1') {
+        if (textDocument.languageId === 'mahal') {
             const modes = languageModes.getAllModesInDocument(textDocument);
             const latestTextDocument = documents.get(textDocument.uri);
             if (latestTextDocument && latestTextDocument.version === version) {

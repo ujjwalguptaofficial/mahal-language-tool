@@ -4,7 +4,7 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { ExtensionContext } from 'vscode';
+import { workspace, commands, ExtensionContext, OutputChannel } from 'vscode';
 
 import {
     LanguageClient,
@@ -17,6 +17,14 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
+
+    const socketPort = workspace.getConfiguration('languageServerExample').get('port', 7000);
+    let socket: WebSocket | null = null;
+
+    commands.registerCommand('languageServerExample.startStreaming', () => {
+        // Establish websocket connection
+        socket = new WebSocket(`ws://localhost:${socketPort}`);
+    });
 
     // The server is implemented in node
     const serverModule = context.asAbsolutePath(
@@ -35,14 +43,38 @@ export function activate(context: ExtensionContext) {
         debug: {
             module: serverModule,
             transport: TransportKind.ipc,
-            options: debugOptions
+            options: debugOptions,
         }
+    };
+    // The log to send
+    let log = '';
+    const websocketOutputChannel: OutputChannel = {
+        name: 'websocket',
+        // Only append the logs but send them later
+        append(value: string) {
+            log += value;
+            console.log(value);
+        },
+        appendLine(value: string) {
+            log += value;
+            // Don't send logs until WebSocket initialization
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(log);
+            }
+            log = '';
+        },
+        clear() { /* empty */ },
+        show() { /* empty */ },
+        hide() { /* empty */ },
+        dispose() { /* empty */ }
     };
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
         // Register the server for plain text documents
-        documentSelector: [{ scheme: 'file', language: 'mahal' }]
+        documentSelector: [{ scheme: 'file', language: 'mahal' }],
+        // Hijacks all LSP logs and redirect them to a specific port through WebSocket connection
+        outputChannel: websocketOutputChannel
     };
 
     // Create the language client and start the client.
@@ -52,6 +84,10 @@ export function activate(context: ExtensionContext) {
         serverOptions,
         clientOptions
     );
+
+    // client.onNotification("log", (...params) => {
+    //     console.log(...params);
+    // })
 
     // Start the client. This will also launch the server
     client.start();

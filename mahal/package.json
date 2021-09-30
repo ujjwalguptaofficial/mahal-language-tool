@@ -7,29 +7,49 @@
         "vscode": "^1.60.0"
     },
     "activationEvents": [
-		"onLanguage:mahal"
-	],
+        "onLanguage:mahal"
+    ],
     "main": "language_service/dist/client.js",
     "categories": [
         "Programming Languages"
     ],
     "contributes": {
+        "mahal.trace.server": {
+            "scope": "window",
+            "type": "string",
+            "enum": [
+                "off",
+                "messages",
+                "verbose"
+            ],
+            "default": "off",
+            "description": "Traces the communication between VS Code and the language server."
+        },
         "snippets": [
             {
                 "language": "mahal",
                 "path": "./snippets/snippets.json"
             }
         ],
-        "languages": [{
-            "id": "mahal",
-            "aliases": ["Mahal", "mahal"],
-            "extensions": [".mhl"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "mahal",
-            "scopeName": "source.mhl",
-            "path": "./syntaxes/mahal.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "mahal",
+                "aliases": [
+                    "Mahal",
+                    "mahal"
+                ],
+                "extensions": [
+                    ".mhl"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "mahal",
+                "scopeName": "source.mhl",
+                "path": "./syntaxes/mahal.tmLanguage.json"
+            }
+        ]
     }
 }

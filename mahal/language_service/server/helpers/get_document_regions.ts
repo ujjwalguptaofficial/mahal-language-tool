@@ -13,7 +13,15 @@ export interface HTMLDocumentRegions {
 
 interface EmbeddedRegion { languageId: string | undefined; start: number; end: number; attributeValue?: boolean; }
 
+function getContentFromXmlNode(src, tag) {
+    let startIndex = src.indexOf(`<${tag}`);
+    src = src.substring(startIndex);
+    startIndex = src.indexOf(">");
+    const endIndex = src.indexOf(`</${tag}>`);
+    return { start: startIndex, end: endIndex };
+}
 
+exports.getContentFromXmlNode = getContentFromXmlNode;
 export function getDocumentRegions(languageService: LanguageService, document: TextDocument): HTMLDocumentRegions {
     const regions: EmbeddedRegion[] = [];
     const scanner = languageService.createScanner(document.getText());
@@ -23,18 +31,50 @@ export function getDocumentRegions(languageService: LanguageService, document: T
     const importedScripts: string[] = [];
 
     let token = scanner.scan();
+    const fullText = document.getText();
     while (token !== TokenType.EOS) {
+        console.log("token", scanner.getTokenText());
         switch (token) {
             case TokenType.StartTag:
                 lastTagName = scanner.getTokenText();
                 lastAttributeName = null;
                 languageIdFromType = 'javascript';
+
+                if (lastTagName === 'html') {
+                    // console.log("html tag", "start", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
+                    // console.log('text', scanner.getTokenText());
+                    // let start, end, htmlEndTagFound = false;
+                    // do {
+                    //     token = scanner.scan();
+                    //     if (token === TokenType.StartTagClose) {
+                    //         start = scanner.getTokenEnd();
+                    //     }
+                    //     else if (token === TokenType.EndTagOpen) {
+                    //         end = scanner.getTokenOffset();
+                    //     }
+                    //     else if (token === TokenType.EndTag && scanner.getTokenText() === 'html') {
+                    //         htmlEndTagFound = true;
+                    //     }
+                    //     console.log('token', token, scanner.getTokenText());
+                    // } while (token !== TokenType.EOS && htmlEndTagFound === false)
+                    // console.log("html tassg", "start", start, "end", end, "offset", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
+                    // console.log('text', scanner.getTokenText());
+                    const { start, end } = getContentFromXmlNode(fullText, 'html');
+                    if (start && end) {
+                        console.log("pushed html")
+                        regions.push({ languageId: 'html', start: start + 1, end: end });
+                    }
+                }
                 break;
+            // case TokenType.:
+            //     regions.push({ languageId: 'css', start: scanner.getTokenOffset(), end: scanner.getTokenEnd() });
+            //     break;
             case TokenType.Styles:
+                console.log("css tag", "start", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
                 regions.push({ languageId: 'css', start: scanner.getTokenOffset(), end: scanner.getTokenEnd() });
                 break;
             case TokenType.Script:
-                regions.push({ languageId: languageIdFromType, start: scanner.getTokenOffset(), end: scanner.getTokenEnd() });
+                regions.push({ languageId: 'javascript', start: scanner.getTokenOffset(), end: scanner.getTokenEnd() });
                 break;
             case TokenType.AttributeName:
                 lastAttributeName = scanner.getTokenText();
@@ -218,6 +258,7 @@ function append(result: string, str: string, n: number): string {
 
 function getAttributeLanguage(attributeName: string): string | null {
     const match = attributeName.match(/^(style)$|^(on\w+)$/i);
+    console.log("match", match);
     if (!match) {
         return null;
     }
