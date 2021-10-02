@@ -8,6 +8,7 @@ export interface ILanguageMode {
 	doComplete?: (document: TextDocument, position: Position) => CompletionList;
 	onDocumentRemoved(document: TextDocument): void;
 	dispose(): void;
+	doTagComplete?(document: TextDocument, position: Position)
 }
 
 export interface ILanguageModes {

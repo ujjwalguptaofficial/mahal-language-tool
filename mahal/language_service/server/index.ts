@@ -1,8 +1,12 @@
-import { CompletionList, Diagnostic, ProposedFeatures, TextDocuments, TextDocumentSyncKind } from "vscode-languageserver";
+import { CompletionList, Diagnostic, ProposedFeatures, RequestType, TextDocumentPositionParams, TextDocuments, TextDocumentSyncKind } from "vscode-languageserver";
 import { createConnection } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { getLanguageModes } from "./helpers";
 import { ILanguageMode, ILanguageModes } from "./interfaces";
+namespace TagCloseRequest {
+    export const type: RequestType<TextDocumentPositionParams, string | null, any> =
+        new RequestType('html/tag');
+}
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
@@ -40,6 +44,24 @@ connection.onDidChangeConfiguration(_change => {
     documents.all().forEach(validateTextDocument);
 });
 
+connection.onRequest(TagCloseRequest.type, (evt) => {
+    const document = documents.get(evt.textDocument.uri);
+    if (!document) {
+        return null;
+    }
+
+    const mode = languageModes.getModeAtPosition(
+        document, evt.position
+    );
+
+    if (mode) {
+        const doTagComplete = mode.doTagComplete;
+        if (doTagComplete) {
+            return doTagComplete(evt.textDocument as any, evt.position);
+        }
+    }
+});
+
 connection.onCompletion(async (textDocumentPosition, token) => {
     const document = documents.get(textDocumentPosition.textDocument.uri);
     if (!document) {
@@ -47,12 +69,15 @@ connection.onCompletion(async (textDocumentPosition, token) => {
     }
 
     const mode = languageModes.getModeAtPosition(document, textDocumentPosition.position);
-    if (!mode || !mode.doComplete) {
-        return CompletionList.create();
-    }
-    const doComplete = mode.doComplete!;
 
-    return doComplete(document, textDocumentPosition.position);
+    if (mode) {
+        const doComplete = mode.doComplete;
+        if (doComplete) {
+            return doComplete(document, textDocumentPosition.position);
+        }
+    }
+    return CompletionList.create();
+
 });
 
 // The content of a text document has changed. This event is emitted

@@ -7,6 +7,7 @@ export interface ILanguageMode {
     doComplete?: (document: TextDocument, position: Position) => CompletionList;
     onDocumentRemoved(document: TextDocument): void;
     dispose(): void;
+    doTagComplete?(document: TextDocument, position: Position): any;
 }
 export interface ILanguageModes {
     getModeAtPosition(document: TextDocument, position: Position): ILanguageMode | undefined;

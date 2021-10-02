@@ -16,12 +16,14 @@ interface EmbeddedRegion { languageId: string | undefined; start: number; end: n
 function getContentFromXmlNode(src, tag) {
     let startIndex = src.indexOf(`<${tag}`);
     src = src.substring(startIndex);
-    startIndex = src.indexOf(">");
-    const endIndex = src.indexOf(`</${tag}>`);
-    return { start: startIndex, end: endIndex };
+    let start, endIndex;
+    if (startIndex >= 0) {
+        start = startIndex + src.indexOf(">");
+        endIndex = startIndex + src.indexOf(`</${tag}>`);
+    };
+    return { start: start + 1, end: endIndex };
 }
 
-exports.getContentFromXmlNode = getContentFromXmlNode;
 export function getDocumentRegions(languageService: LanguageService, document: TextDocument): HTMLDocumentRegions {
     const regions: EmbeddedRegion[] = [];
     const scanner = languageService.createScanner(document.getText());
@@ -30,88 +32,105 @@ export function getDocumentRegions(languageService: LanguageService, document: T
     let languageIdFromType: string | undefined = undefined;
     const importedScripts: string[] = [];
 
-    let token = scanner.scan();
+    // let token = scanner.scan();
     const fullText = document.getText();
-    while (token !== TokenType.EOS) {
-        console.log("token", scanner.getTokenText());
-        switch (token) {
-            case TokenType.StartTag:
-                lastTagName = scanner.getTokenText();
-                lastAttributeName = null;
-                languageIdFromType = 'javascript';
-
-                if (lastTagName === 'html') {
-                    // console.log("html tag", "start", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
-                    // console.log('text', scanner.getTokenText());
-                    // let start, end, htmlEndTagFound = false;
-                    // do {
-                    //     token = scanner.scan();
-                    //     if (token === TokenType.StartTagClose) {
-                    //         start = scanner.getTokenEnd();
-                    //     }
-                    //     else if (token === TokenType.EndTagOpen) {
-                    //         end = scanner.getTokenOffset();
-                    //     }
-                    //     else if (token === TokenType.EndTag && scanner.getTokenText() === 'html') {
-                    //         htmlEndTagFound = true;
-                    //     }
-                    //     console.log('token', token, scanner.getTokenText());
-                    // } while (token !== TokenType.EOS && htmlEndTagFound === false)
-                    // console.log("html tassg", "start", start, "end", end, "offset", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
-                    // console.log('text', scanner.getTokenText());
-                    const { start, end } = getContentFromXmlNode(fullText, 'html');
-                    if (start && end) {
-                        console.log("pushed html")
-                        regions.push({ languageId: 'html', start: start + 1, end: end });
-                    }
-                }
-                break;
-            // case TokenType.:
-            //     regions.push({ languageId: 'css', start: scanner.getTokenOffset(), end: scanner.getTokenEnd() });
-            //     break;
-            case TokenType.Styles:
-                console.log("css tag", "start", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
-                regions.push({ languageId: 'css', start: scanner.getTokenOffset(), end: scanner.getTokenEnd() });
-                break;
-            case TokenType.Script:
-                regions.push({ languageId: 'javascript', start: scanner.getTokenOffset(), end: scanner.getTokenEnd() });
-                break;
-            case TokenType.AttributeName:
-                lastAttributeName = scanner.getTokenText();
-                break;
-            case TokenType.AttributeValue:
-                if (lastAttributeName === 'src' && lastTagName.toLowerCase() === 'script') {
-                    let value = scanner.getTokenText();
-                    if (value[0] === '\'' || value[0] === '"') {
-                        value = value.substr(1, value.length - 1);
-                    }
-                    importedScripts.push(value);
-                } else if (lastAttributeName === 'type' && lastTagName.toLowerCase() === 'script') {
-                    if (/["'](module|(text|application)\/(java|ecma)script|text\/babel)["']/.test(scanner.getTokenText())) {
-                        languageIdFromType = 'javascript';
-                    } else if (/["']text\/typescript["']/.test(scanner.getTokenText())) {
-                        languageIdFromType = 'typescript';
-                    } else {
-                        languageIdFromType = undefined;
-                    }
-                } else {
-                    const attributeLanguageId = getAttributeLanguage(lastAttributeName!);
-                    if (attributeLanguageId) {
-                        let start = scanner.getTokenOffset();
-                        let end = scanner.getTokenEnd();
-                        const firstChar = document.getText()[start];
-                        if (firstChar === '\'' || firstChar === '"') {
-                            start++;
-                            end--;
-                        }
-                        regions.push({ languageId: attributeLanguageId, start, end, attributeValue: true });
-                    }
-                }
-                lastAttributeName = null;
-                break;
-        }
-        token = scanner.scan();
+    let result = getContentFromXmlNode(fullText, 'html');
+    const htmlStart = result.start;
+    const htmlEnd = result.end;
+    if (htmlStart && htmlEnd) {
+        console.log("pushed html", result);
+        regions.push({ languageId: 'html', start: htmlStart, end: htmlEnd });
     }
+
+    result = getContentFromXmlNode(fullText, 'style');
+    const styleStart = result.start;
+    const styleEnd = result.end;
+    if (styleStart && styleEnd) {
+        console.log("pushed css", result);
+        regions.push({ languageId: 'css', start: styleStart, end: styleEnd });
+    }
+
+
+    // while (token !== TokenType.EOS) {
+    //     console.log("token", scanner.getTokenText());
+    //     switch (token) {
+    //         case TokenType.StartTag:
+    //             lastTagName = scanner.getTokenText();
+    //             lastAttributeName = null;
+    //             languageIdFromType = 'javascript';
+
+    //             if (lastTagName === 'html') {
+    //                 // console.log("html tag", "start", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
+    //                 // console.log('text', scanner.getTokenText());
+    //                 // let start, end, htmlEndTagFound = false;
+    //                 // do {
+    //                 //     token = scanner.scan();
+    //                 //     if (token === TokenType.StartTagClose) {
+    //                 //         start = scanner.getTokenEnd();
+    //                 //     }
+    //                 //     else if (token === TokenType.EndTagOpen) {
+    //                 //         end = scanner.getTokenOffset();
+    //                 //     }
+    //                 //     else if (token === TokenType.EndTag && scanner.getTokenText() === 'html') {
+    //                 //         htmlEndTagFound = true;
+    //                 //     }
+    //                 //     console.log('token', token, scanner.getTokenText());
+    //                 // } while (token !== TokenType.EOS && htmlEndTagFound === false)
+    //                 // console.log("html tassg", "start", start, "end", end, "offset", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
+    //                 // console.log('text', scanner.getTokenText());
+    //                 const { start, end } = getContentFromXmlNode(fullText, 'html');
+    //                 if (start && end) {
+    //                     console.log("pushed html")
+    //                     regions.push({ languageId: 'html', start: start + 1, end: end });
+    //                 }
+    //             }
+    //             break;
+    //         // case TokenType.:
+    //         //     regions.push({ languageId: 'css', start: scanner.getTokenOffset(), end: scanner.getTokenEnd() });
+    //         //     break;
+    //         case TokenType.Styles:
+    //             console.log("css tag", "start", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
+    //             regions.push({ languageId: 'css', start: scanner.getTokenOffset(), end: scanner.getTokenEnd() });
+    //             break;
+    //         case TokenType.Script:
+    //             regions.push({ languageId: 'javascript', start: scanner.getTokenOffset(), end: scanner.getTokenEnd() });
+    //             break;
+    //         case TokenType.AttributeName:
+    //             lastAttributeName = scanner.getTokenText();
+    //             break;
+    //         case TokenType.AttributeValue:
+    //             if (lastAttributeName === 'src' && lastTagName.toLowerCase() === 'script') {
+    //                 let value = scanner.getTokenText();
+    //                 if (value[0] === '\'' || value[0] === '"') {
+    //                     value = value.substr(1, value.length - 1);
+    //                 }
+    //                 importedScripts.push(value);
+    //             } else if (lastAttributeName === 'type' && lastTagName.toLowerCase() === 'script') {
+    //                 if (/["'](module|(text|application)\/(java|ecma)script|text\/babel)["']/.test(scanner.getTokenText())) {
+    //                     languageIdFromType = 'javascript';
+    //                 } else if (/["']text\/typescript["']/.test(scanner.getTokenText())) {
+    //                     languageIdFromType = 'typescript';
+    //                 } else {
+    //                     languageIdFromType = undefined;
+    //                 }
+    //             } else {
+    //                 const attributeLanguageId = getAttributeLanguage(lastAttributeName!);
+    //                 if (attributeLanguageId) {
+    //                     let start = scanner.getTokenOffset();
+    //                     let end = scanner.getTokenEnd();
+    //                     const firstChar = document.getText()[start];
+    //                     if (firstChar === '\'' || firstChar === '"') {
+    //                         start++;
+    //                         end--;
+    //                     }
+    //                     regions.push({ languageId: attributeLanguageId, start, end, attributeValue: true });
+    //                 }
+    //             }
+    //             lastAttributeName = null;
+    //             break;
+    //     }
+    //     token = scanner.scan();
+    // }
     return {
         getLanguageRanges: (range: Range) => getLanguageRanges(document, regions, range),
         getEmbeddedDocument: (languageId: string, ignoreAttributeValues: boolean) => getEmbeddedDocument(document, regions, languageId, ignoreAttributeValues),

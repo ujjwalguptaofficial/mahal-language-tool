@@ -1,7 +1,7 @@
 const path = require('path')
 
 exports.default = {
-    // mode:,
+    mode: "development",
     devtool: 'source-map',
     entry: `./server/index.ts`,
     target: 'node',
