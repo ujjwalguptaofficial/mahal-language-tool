@@ -2,6 +2,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { LanguageService, TokenType } from "vscode-html-languageservice";
 import { ILanguageRange } from "../interfaces";
 import { Position, Range } from "vscode-languageserver";
+import { getRangeFromXmlNode } from "./get_range_from_xml";
 
 export interface HTMLDocumentRegions {
     getEmbeddedDocument(languageId: string, ignoreAttributeValues?: boolean): TextDocument;
@@ -13,16 +14,7 @@ export interface HTMLDocumentRegions {
 
 interface EmbeddedRegion { languageId: string | undefined; start: number; end: number; attributeValue?: boolean; }
 
-function getContentFromXmlNode(src, tag) {
-    let startIndex = src.indexOf(`<${tag}`);
-    src = src.substring(startIndex);
-    let start, endIndex;
-    if (startIndex >= 0) {
-        start = startIndex + src.indexOf(">");
-        endIndex = startIndex + src.indexOf(`</${tag}>`);
-    };
-    return { start: start + 1, end: endIndex };
-}
+ 
 
 export function getDocumentRegions(languageService: LanguageService, document: TextDocument): HTMLDocumentRegions {
     const regions: EmbeddedRegion[] = [];
@@ -34,7 +26,7 @@ export function getDocumentRegions(languageService: LanguageService, document: T
 
     // let token = scanner.scan();
     const fullText = document.getText();
-    let result = getContentFromXmlNode(fullText, 'html');
+    let result = getRangeFromXmlNode(fullText, 'html');
     const htmlStart = result.start;
     const htmlEnd = result.end;
     if (htmlStart && htmlEnd) {
@@ -42,12 +34,20 @@ export function getDocumentRegions(languageService: LanguageService, document: T
         regions.push({ languageId: 'html', start: htmlStart, end: htmlEnd });
     }
 
-    result = getContentFromXmlNode(fullText, 'style');
+    result = getRangeFromXmlNode(fullText, 'style');
     const styleStart = result.start;
     const styleEnd = result.end;
     if (styleStart && styleEnd) {
         console.log("pushed css", result);
         regions.push({ languageId: 'css', start: styleStart, end: styleEnd });
+    }
+
+    result = getRangeFromXmlNode(fullText, 'script');
+    const scriptStart = result.start;
+    const scriptEnd = result.end;
+    if (scriptStart && scriptEnd) {
+        console.log("pushed script", result);
+        regions.push({ languageId: 'javascript', start: scriptStart, end: scriptEnd });
     }
 
 
@@ -78,7 +78,7 @@ export function getDocumentRegions(languageService: LanguageService, document: T
     //                 // } while (token !== TokenType.EOS && htmlEndTagFound === false)
     //                 // console.log("html tassg", "start", start, "end", end, "offset", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
     //                 // console.log('text', scanner.getTokenText());
-    //                 const { start, end } = getContentFromXmlNode(fullText, 'html');
+    //                 const { start, end } = getRangeFromXmlNode(fullText, 'html');
     //                 if (start && end) {
     //                     console.log("pushed html")
     //                     regions.push({ languageId: 'html', start: start + 1, end: end });

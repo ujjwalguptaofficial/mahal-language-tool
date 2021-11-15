@@ -39,7 +39,8 @@
                     "mahal"
                 ],
                 "extensions": [
-                    ".mhl"
+                    ".mhl",
+                    ".mahal"
                 ],
                 "configuration": "./language-configuration.json"
             }

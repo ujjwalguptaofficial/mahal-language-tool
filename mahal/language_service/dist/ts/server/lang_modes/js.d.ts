@@ -1,3 +1,5 @@
-import { LanguageService } from 'vscode-typescript-languageservice';
+import { LanguageService, ScriptElementKind } from 'typescript';
 import { ILanguageCache, ILanguageMode, IMahalDocumentRegion } from '../interfaces';
-export declare function getJSMode(jsLanguageService: LanguageService, documentRegions: ILanguageCache<IMahalDocumentRegion>): ILanguageMode;
+import { CompletionItemKind } from 'vscode-languageserver-types';
+export declare function toCompletionItemKind(kind: ScriptElementKind): CompletionItemKind;
+export declare function getJSMode(tsLanguageService: LanguageService, documentRegions: ILanguageCache<IMahalDocumentRegion>): ILanguageMode;

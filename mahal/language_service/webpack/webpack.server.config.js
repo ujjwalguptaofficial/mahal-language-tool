@@ -13,6 +13,7 @@ exports.default = {
     },
     externals: {
         vscode: 'vscode',
+        typescript: 'typescript',
     },
     module: {
         rules: [

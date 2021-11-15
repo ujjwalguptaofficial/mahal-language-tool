@@ -17,7 +17,7 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-
+    console.log("workspace folders",workspace.workspaceFolders, workspace.rootPath);
     const socketPort = workspace.getConfiguration('languageServerExample').get('port', 7000);
     let socket: WebSocket | null = null;
 
@@ -80,7 +80,7 @@ export function activate(context: ExtensionContext) {
     // Create the language client and start the client.
     client = new LanguageClient(
         'mahal_lang_extension',
-        'Mahal Lnaguage Extension',
+        'Mahal Language Extension',
         serverOptions,
         clientOptions
     );

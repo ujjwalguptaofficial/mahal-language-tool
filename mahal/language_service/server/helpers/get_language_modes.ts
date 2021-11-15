@@ -6,16 +6,26 @@ import { ILanguageCache, ILanguageMode, ILanguageModeRange, ILanguageModes, IMah
 import { getCSSMode, getHTMLMode, getJSMode } from "../lang_modes";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { getDocumentRegions } from "./get_document_regions";
-import { Range } from "vscode-languageserver";
+import { InitializeParams, Range } from "vscode-languageserver";
+import { createLanguageService, LanguageServiceHost } from "typescript";
+import { getTypescriptService } from "../services";
 
-export function getLanguageModes(): ILanguageModes {
+
+
+// createLanguageService(
+
+//     new LanguageServiceHost()
+// )
+export function getLanguageModes(params: InitializeParams): ILanguageModes {
     const htmlLanguageService = getHTMLLanguageService();
     const cssLanguageService = getCSSLanguageService();
+
     // const cssLanguageService = getJsLangService();
 
     const documentRegions = getLanguageCache<IMahalDocumentRegion>(10, 60, document =>
         getDocumentRegions(htmlLanguageService, document)
     );
+
 
     let modelCaches: ILanguageCache<any>[] = [];
     modelCaches.push(documentRegions);
@@ -23,7 +33,10 @@ export function getLanguageModes(): ILanguageModes {
     let modes = Object.create(null);
     modes['html'] = getHTMLMode(htmlLanguageService, documentRegions);
     modes['css'] = getCSSMode(cssLanguageService, documentRegions);
-    // modes['css'] = getJSMode(cssLanguageService, documentRegions);
+    const jsService = getTypescriptService(params);
+    if (jsService) {
+        modes['javascript'] = getJSMode(jsService, documentRegions);
+    }
 
     return {
         getModeAtPosition(

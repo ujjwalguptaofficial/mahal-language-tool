@@ -1,2 +1,3 @@
 import { ILanguageModes } from "../interfaces";
-export declare function getLanguageModes(): ILanguageModes;
+import { InitializeParams } from "vscode-languageserver";
+export declare function getLanguageModes(params: InitializeParams): ILanguageModes;

@@ -3,6 +3,8 @@ import { createConnection } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { getLanguageModes } from "./helpers";
 import { ILanguageMode, ILanguageModes } from "./interfaces";
+
+
 namespace TagCloseRequest {
     export const type: RequestType<TextDocumentPositionParams, string | null, any> =
         new RequestType('html/tag');
@@ -14,8 +16,8 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let languageModes: ILanguageModes;
 
 connection.onInitialize(params => {
-    console.log('initialized called');
-    languageModes = getLanguageModes()
+    console.log('initialized', params.workspaceFolders);
+    languageModes = getLanguageModes(params);
     documents.onDidClose(e => {
         languageModes.onDocumentRemoved(e.document);
     });

@@ -69984,19 +69984,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var vscode_languageserver_textdocument__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vscode-languageserver-textdocument */ "./node_modules/vscode-languageserver-textdocument/lib/esm/main.js");
 /* harmony import */ var vscode_languageserver__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! vscode-languageserver */ "./node_modules/vscode-languageserver/lib/node/main.js");
 /* harmony import */ var vscode_languageserver__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(vscode_languageserver__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _get_range_from_xml__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./get_range_from_xml */ "./server/helpers/get_range_from_xml.ts");
 
 
-function getContentFromXmlNode(src, tag) {
-    var startIndex = src.indexOf("<" + tag);
-    src = src.substring(startIndex);
-    var start, endIndex;
-    if (startIndex >= 0) {
-        start = startIndex + src.indexOf(">");
-        endIndex = startIndex + src.indexOf("</" + tag + ">");
-    }
-    ;
-    return { start: start + 1, end: endIndex };
-}
+
 function getDocumentRegions(languageService, document) {
     var regions = [];
     var scanner = languageService.createScanner(document.getText());
@@ -70006,19 +69997,26 @@ function getDocumentRegions(languageService, document) {
     var importedScripts = [];
     // let token = scanner.scan();
     var fullText = document.getText();
-    var result = getContentFromXmlNode(fullText, 'html');
+    var result = Object(_get_range_from_xml__WEBPACK_IMPORTED_MODULE_2__["getRangeFromXmlNode"])(fullText, 'html');
     var htmlStart = result.start;
     var htmlEnd = result.end;
     if (htmlStart && htmlEnd) {
         console.log("pushed html", result);
         regions.push({ languageId: 'html', start: htmlStart, end: htmlEnd });
     }
-    result = getContentFromXmlNode(fullText, 'style');
+    result = Object(_get_range_from_xml__WEBPACK_IMPORTED_MODULE_2__["getRangeFromXmlNode"])(fullText, 'style');
     var styleStart = result.start;
     var styleEnd = result.end;
     if (styleStart && styleEnd) {
         console.log("pushed css", result);
         regions.push({ languageId: 'css', start: styleStart, end: styleEnd });
+    }
+    result = Object(_get_range_from_xml__WEBPACK_IMPORTED_MODULE_2__["getRangeFromXmlNode"])(fullText, 'script');
+    var scriptStart = result.start;
+    var scriptEnd = result.end;
+    if (scriptStart && scriptEnd) {
+        console.log("pushed script", result);
+        regions.push({ languageId: 'javascript', start: scriptStart, end: scriptEnd });
     }
     // while (token !== TokenType.EOS) {
     //     console.log("token", scanner.getTokenText());
@@ -70046,7 +70044,7 @@ function getDocumentRegions(languageService, document) {
     //                 // } while (token !== TokenType.EOS && htmlEndTagFound === false)
     //                 // console.log("html tassg", "start", start, "end", end, "offset", scanner.getTokenOffset(), "end", scanner.getTokenEnd());
     //                 // console.log('text', scanner.getTokenText());
-    //                 const { start, end } = getContentFromXmlNode(fullText, 'html');
+    //                 const { start, end } = getRangeFromXmlNode(fullText, 'html');
     //                 if (start && end) {
     //                     console.log("pushed html")
     //                     regions.push({ languageId: 'html', start: start + 1, end: end });
@@ -70347,25 +70345,34 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _get_language_cache__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./get_language_cache */ "./server/helpers/get_language_cache.ts");
 /* harmony import */ var _lang_modes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../lang_modes */ "./server/lang_modes/index.ts");
 /* harmony import */ var _get_document_regions__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./get_document_regions */ "./server/helpers/get_document_regions.ts");
+/* harmony import */ var _services__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../services */ "./server/services/index.ts");
 
 // import {  as getJsLangService } from "vscode-typescript-languageservice";
 
 
 
 
-function getLanguageModes() {
+
+// createLanguageService(
+//     new LanguageServiceHost()
+// )
+function getLanguageModes(params) {
     var htmlLanguageService = Object(vscode_html_languageservice__WEBPACK_IMPORTED_MODULE_0__["getLanguageService"])();
     var cssLanguageService = Object(vscode_css_languageservice__WEBPACK_IMPORTED_MODULE_1__["getCSSLanguageService"])();
     // const cssLanguageService = getJsLangService();
     var documentRegions = Object(_get_language_cache__WEBPACK_IMPORTED_MODULE_2__["getLanguageCache"])(10, 60, function (document) {
         return Object(_get_document_regions__WEBPACK_IMPORTED_MODULE_4__["getDocumentRegions"])(htmlLanguageService, document);
     });
+    documentRegions.get;
     var modelCaches = [];
     modelCaches.push(documentRegions);
     var modes = Object.create(null);
     modes['html'] = Object(_lang_modes__WEBPACK_IMPORTED_MODULE_3__["getHTMLMode"])(htmlLanguageService, documentRegions);
     modes['css'] = Object(_lang_modes__WEBPACK_IMPORTED_MODULE_3__["getCSSMode"])(cssLanguageService, documentRegions);
-    // modes['css'] = getJSMode(cssLanguageService, documentRegions);
+    var jsService = Object(_services__WEBPACK_IMPORTED_MODULE_5__["getTypescriptService"])(params);
+    if (jsService) {
+        modes['javascript'] = Object(_lang_modes__WEBPACK_IMPORTED_MODULE_3__["getJSMode"])(jsService, documentRegions);
+    }
     return {
         getModeAtPosition: function (document, position) {
             var languageId = documentRegions.get(document).getLanguageAtPosition(position);
@@ -70432,11 +70439,41 @@ function getLanguageModes() {
 
 /***/ }),
 
+/***/ "./server/helpers/get_range_from_xml.ts":
+/*!**********************************************!*\
+  !*** ./server/helpers/get_range_from_xml.ts ***!
+  \**********************************************/
+/*! exports provided: getRangeFromXmlNode, getContentFromXmlNode */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getRangeFromXmlNode", function() { return getRangeFromXmlNode; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getContentFromXmlNode", function() { return getContentFromXmlNode; });
+function getRangeFromXmlNode(src, tag) {
+    var startIndex = src.indexOf("<" + tag);
+    src = src.substring(startIndex);
+    var start, endIndex;
+    if (startIndex >= 0) {
+        start = startIndex + src.indexOf(">");
+        endIndex = startIndex + src.indexOf("</" + tag + ">");
+    }
+    ;
+    return { start: start + 1, end: endIndex };
+}
+function getContentFromXmlNode(src, tag) {
+    var range = getRangeFromXmlNode(src, tag);
+    return src.substring(range.start, range.end);
+}
+
+
+/***/ }),
+
 /***/ "./server/helpers/index.ts":
 /*!*********************************!*\
   !*** ./server/helpers/index.ts ***!
   \*********************************/
-/*! exports provided: getLanguageCache, getLanguageModes */
+/*! exports provided: getLanguageCache, getLanguageModes, getRangeFromXmlNode, getContentFromXmlNode */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -70446,6 +70483,12 @@ __webpack_require__.r(__webpack_exports__);
 
 /* harmony import */ var _get_language_modes__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./get_language_modes */ "./server/helpers/get_language_modes.ts");
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getLanguageModes", function() { return _get_language_modes__WEBPACK_IMPORTED_MODULE_1__["getLanguageModes"]; });
+
+/* harmony import */ var _get_range_from_xml__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./get_range_from_xml */ "./server/helpers/get_range_from_xml.ts");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getRangeFromXmlNode", function() { return _get_range_from_xml__WEBPACK_IMPORTED_MODULE_2__["getRangeFromXmlNode"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getContentFromXmlNode", function() { return _get_range_from_xml__WEBPACK_IMPORTED_MODULE_2__["getContentFromXmlNode"]; });
+
 
 
 
@@ -70516,8 +70559,8 @@ var connection = Object(vscode_languageserver_node__WEBPACK_IMPORTED_MODULE_1__[
 var documents = new vscode_languageserver__WEBPACK_IMPORTED_MODULE_0__["TextDocuments"](vscode_languageserver_textdocument__WEBPACK_IMPORTED_MODULE_2__["TextDocument"]);
 var languageModes;
 connection.onInitialize(function (params) {
-    console.log('initialized called');
-    languageModes = Object(_helpers__WEBPACK_IMPORTED_MODULE_3__["getLanguageModes"])();
+    console.log('initialized', params.workspaceFolders);
+    languageModes = Object(_helpers__WEBPACK_IMPORTED_MODULE_3__["getLanguageModes"])(params);
     documents.onDidClose(function (e) {
         languageModes.onDocumentRemoved(e.document);
     });
@@ -70663,12 +70706,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getHTMLMode", function() { return getHTMLMode; });
 /* harmony import */ var vscode_emmet_helper__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vscode-emmet-helper */ "./node_modules/vscode-emmet-helper/lib/esm/emmetHelper.js");
 /* harmony import */ var vscode_html_languageservice__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! vscode-html-languageservice */ "./node_modules/vscode-html-languageservice/lib/esm/htmlLanguageService.js");
-var __spreadArrays = (undefined && undefined.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
+var __spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
 };
 
 
@@ -70691,15 +70736,9 @@ function getHTMLMode(htmlLanguageService, documentRegions) {
             console.log("called html do complete", "'" + embedded.getText() + "'");
             // const list = doComplete(embedded, position, 'html', {
             // });
-            try {
-                var list = htmlLanguageService.doComplete(embedded, position, html);
-                var emmetResults = (Object(vscode_emmet_helper__WEBPACK_IMPORTED_MODULE_0__["doComplete"])(embedded, position, 'html', {}) || {}).items || [];
-                return vscode_html_languageservice__WEBPACK_IMPORTED_MODULE_1__["CompletionList"].create(__spreadArrays(emmetResults, list.items), emmetResults.length > 0);
-            }
-            catch (error) {
-                console.error("error", error);
-                return null;
-            }
+            var list = htmlLanguageService.doComplete(embedded, position, html);
+            var emmetResults = (Object(vscode_emmet_helper__WEBPACK_IMPORTED_MODULE_0__["doComplete"])(embedded, position, 'html', {}) || {}).items || [];
+            return vscode_html_languageservice__WEBPACK_IMPORTED_MODULE_1__["CompletionList"].create(__spreadArray(__spreadArray([], emmetResults, true), list.items, true), emmetResults.length > 0);
             // console.log("list", list.items);
             // return list;
         },
@@ -70720,7 +70759,7 @@ function getHTMLMode(htmlLanguageService, documentRegions) {
 /*!************************************!*\
   !*** ./server/lang_modes/index.ts ***!
   \************************************/
-/*! exports provided: getCSSMode, getHTMLMode, getJSMode */
+/*! exports provided: getCSSMode, getHTMLMode, toCompletionItemKind, getJSMode */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -70732,6 +70771,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getHTMLMode", function() { return _html__WEBPACK_IMPORTED_MODULE_1__["getHTMLMode"]; });
 
 /* harmony import */ var _js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./js */ "./server/lang_modes/js.ts");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "toCompletionItemKind", function() { return _js__WEBPACK_IMPORTED_MODULE_2__["toCompletionItemKind"]; });
+
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getJSMode", function() { return _js__WEBPACK_IMPORTED_MODULE_2__["getJSMode"]; });
 
 
@@ -70745,28 +70786,294 @@ __webpack_require__.r(__webpack_exports__);
 /*!*********************************!*\
   !*** ./server/lang_modes/js.ts ***!
   \*********************************/
-/*! exports provided: getJSMode */
+/*! exports provided: toCompletionItemKind, getJSMode */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "toCompletionItemKind", function() { return toCompletionItemKind; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getJSMode", function() { return getJSMode; });
-function getJSMode(jsLanguageService, documentRegions) {
+/* harmony import */ var typescript__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! typescript */ "typescript");
+/* harmony import */ var typescript__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(typescript__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var vscode_languageserver_textdocument__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! vscode-languageserver-textdocument */ "./node_modules/vscode-languageserver-textdocument/lib/esm/main.js");
+/* harmony import */ var url__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! url */ "url");
+/* harmony import */ var url__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(url__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! vscode-languageserver-types */ "./node_modules/vscode-languageserver-types/lib/esm/main.js");
+/* harmony import */ var _helpers__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../helpers */ "./server/helpers/index.ts");
+
+
+
+
+
+function getLabelAndDetailFromCompletionEntry(entry) {
+    // Is import path completion
+    if (entry.kind === typescript__WEBPACK_IMPORTED_MODULE_0__["ScriptElementKind"].scriptElement) {
+        if (entry.kindModifiers) {
+            return {
+                label: entry.name,
+                detail: entry.name + entry.kindModifiers
+            };
+        }
+        else {
+            var ext = ".mahal";
+            if (entry.name.endsWith(ext)) {
+                return {
+                    label: entry.name.slice(0, -ext.length),
+                    detail: entry.name
+                };
+            }
+        }
+    }
+    return {
+        label: entry.name,
+        detail: undefined
+    };
+}
+/* tslint:disable:max-line-length */
+/**
+ * Adapted from https://github.com/microsoft/vscode/blob/2b090abd0fdab7b21a3eb74be13993ad61897f84/extensions/typescript-language-features/src/languageFeatures/completions.ts#L147-L181
+ */
+function getFilterText(insertText) {
+    // For `this.` completions, generally don't set the filter text since we don't want them to be overly prioritized. #74164
+    if (insertText === null || insertText === void 0 ? void 0 : insertText.startsWith('this.')) {
+        return undefined;
+    }
+    // Handle the case:
+    // ```
+    // const xyz = { 'ab c': 1 };
+    // xyz.ab|
+    // ```
+    // In which case we want to insert a bracket accessor but should use `.abc` as the filter text instead of
+    // the bracketed insert text.
+    else if (insertText === null || insertText === void 0 ? void 0 : insertText.startsWith('[')) {
+        return insertText.replace(/^\[['"](.+)[['"]\]$/, '.$1');
+    }
+    // In all other cases, fallback to using the insertText
+    return insertText;
+}
+function toCompletionItemKind(kind) {
+    switch (kind) {
+        case 'primitive type':
+        case 'keyword':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].Keyword;
+        case 'var':
+        case 'local var':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].Variable;
+        case 'property':
+        case 'getter':
+        case 'setter':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].Field;
+        case 'function':
+        case 'method':
+        case 'construct':
+        case 'call':
+        case 'index':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].Function;
+        case 'enum':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].Enum;
+        case 'module':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].Module;
+        case 'class':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].Class;
+        case 'interface':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].Interface;
+        case 'warning':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].File;
+        case 'script':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].File;
+        case 'directory':
+            return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].Folder;
+    }
+    return vscode_languageserver_types__WEBPACK_IMPORTED_MODULE_3__["CompletionItemKind"].Property;
+}
+var NON_SCRIPT_TRIGGERS = ['<', '*', ':'];
+function getTsTriggerCharacter(triggerChar) {
+    var legalChars = ['@', '#', '.', '"', "'", '`', '/', '<'];
+    if (legalChars.includes(triggerChar)) {
+        return triggerChar;
+    }
+    return undefined;
+}
+function getJSMode(tsLanguageService, documentRegions) {
     return {
         getId: function () {
             return 'javascript';
         },
-        doValidation: function (document) {
-            var embedded = documentRegions.get(document).getEmbeddedDocument('javascript');
-            return jsLanguageService.doValidation(embedded.uri, {});
-        },
+        // doValidation(document: TextDocument) {
+        //     const embedded = documentRegions.get(document).getEmbeddedDocument('javascript');
+        //     return tsLanguageService.val(embedded.uri, {});
+        // },
         doComplete: function (document, position) {
             var embedded = documentRegions.get(document).getEmbeddedDocument('javascript');
-            return jsLanguageService.doComplete(embedded.uri, position);
+            var fileName = Object(url__WEBPACK_IMPORTED_MODULE_2__["fileURLToPath"])(embedded.uri) + ".ts";
+            var jsTextDoc = vscode_languageserver_textdocument__WEBPACK_IMPORTED_MODULE_1__["TextDocument"].create(embedded.uri, 'mahal', document.version, Object(_helpers__WEBPACK_IMPORTED_MODULE_4__["getContentFromXmlNode"])(document.getText(), 'script'));
+            console.log("document.getText()", document.getText());
+            console.log("js do Complete called", fileName);
+            try {
+                // console.log("filexist", sys.fileExists(fileName))
+                // const prog = tsLanguageService.getProgram();
+                // const source = prog.getSourceFile(fileName);
+                // console.log("source", source);
+                var offset = jsTextDoc.offsetAt(position);
+                var fileText = jsTextDoc.getText();
+                console.log("fileText", "start " + fileText + " end");
+                console.log("offset", offset, "char", "\"" + fileText[offset] + "\"", "\"" + fileText[offset - 1] + "\"");
+                var triggerChar = fileText[offset - 1];
+                if (NON_SCRIPT_TRIGGERS.includes(triggerChar)) {
+                    return { isIncomplete: false, items: [] };
+                }
+                var triggerCharValue = getTsTriggerCharacter(triggerChar);
+                console.log("triggerCharValue", triggerCharValue);
+                var result = tsLanguageService.getCompletionsAtPosition(fileName, offset, {
+                    allowIncompleteCompletions: true,
+                    allowTextChangesInNewFiles: true,
+                    includeAutomaticOptionalChainCompletions: true,
+                    includeCompletionsWithInsertText: true,
+                    triggerCharacter: triggerCharValue,
+                    includeCompletionsForImportStatements: true,
+                    includeCompletionsForModuleExports: true,
+                    includeCompletionsWithSnippetText: true,
+                    includePackageJsonAutoImports: "auto"
+                });
+                var entries = result ? result.entries : [];
+                // console.log("result", result);
+                return entries.map(function (item) {
+                    var _a = getLabelAndDetailFromCompletionEntry(item), detail = _a.detail, label = _a.label;
+                    var completionItem = {
+                        label: label,
+                        detail: detail,
+                        sortText: item.sortText,
+                        insertText: item.insertText,
+                        preselect: item.isRecommended,
+                        filterText: getFilterText(item.insertText),
+                        kind: toCompletionItemKind(item.kind),
+                    };
+                    return completionItem;
+                });
+            }
+            catch (error) {
+                console.error("error", error);
+            }
+            return [];
         },
         onDocumentRemoved: function (_document) { },
         dispose: function () { }
     };
+}
+
+
+/***/ }),
+
+/***/ "./server/services/index.ts":
+/*!**********************************!*\
+  !*** ./server/services/index.ts ***!
+  \**********************************/
+/*! exports provided: getTypescriptService */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _ts_service__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./ts_service */ "./server/services/ts_service.ts");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "getTypescriptService", function() { return _ts_service__WEBPACK_IMPORTED_MODULE_0__["getTypescriptService"]; });
+
+
+
+
+/***/ }),
+
+/***/ "./server/services/ts_service.ts":
+/*!***************************************!*\
+  !*** ./server/services/ts_service.ts ***!
+  \***************************************/
+/*! exports provided: getTypescriptService */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getTypescriptService", function() { return getTypescriptService; });
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! fs */ "fs");
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(fs__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var url__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! url */ "url");
+/* harmony import */ var url__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(url__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var typescript__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! typescript */ "typescript");
+/* harmony import */ var typescript__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(typescript__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _helpers__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../helpers */ "./server/helpers/index.ts");
+
+
+
+
+function getTypescriptService(params) {
+    var workspace = params.workspaceFolders;
+    if (workspace.length === 0) {
+        return console.error("no workspace found");
+    }
+    var activeWorkSpace = workspace[0];
+    var workSpaceDir = Object(url__WEBPACK_IMPORTED_MODULE_1__["fileURLToPath"])(activeWorkSpace.uri);
+    console.log('searchDir', workSpaceDir);
+    var tsConfigPath = Object(typescript__WEBPACK_IMPORTED_MODULE_2__["findConfigFile"])(process.cwd(), typescript__WEBPACK_IMPORTED_MODULE_2__["sys"].fileExists, 'tsconfig.json') ||
+        Object(typescript__WEBPACK_IMPORTED_MODULE_2__["findConfigFile"])(workSpaceDir, typescript__WEBPACK_IMPORTED_MODULE_2__["sys"].fileExists, 'jsconfig.json');
+    var tsConfig;
+    if (tsConfigPath) {
+        tsConfig = Object(fs__WEBPACK_IMPORTED_MODULE_0__["readFileSync"])(tsConfigPath, {
+            encoding: 'utf8'
+        });
+        console.log('file', tsConfig);
+    }
+    else {
+        tsConfig = {
+            allowJs: true,
+            declaration: false,
+        };
+    }
+    console.log('path', tsConfigPath);
+    var fileNames = typescript__WEBPACK_IMPORTED_MODULE_2__["sys"].readDirectory(workSpaceDir, ['mahal', 'mhl']).map(function (item) {
+        return item + ".ts";
+    });
+    console.log("dir", fileNames);
+    var getFileName = function (fileName) {
+        return fileName.substr(0, fileName.length - 3);
+    };
+    // activeWorkSpace.uri
+    var host = {
+        getCompilationSettings: function () {
+            return tsConfig;
+        },
+        getCurrentDirectory: function () {
+            return workSpaceDir;
+        },
+        getDefaultLibFileName: function (options) {
+            var libPath = Object(typescript__WEBPACK_IMPORTED_MODULE_2__["getDefaultLibFilePath"])(options);
+            return libPath;
+        },
+        getScriptFileNames: function () {
+            return fileNames;
+        },
+        getScriptSnapshot: function (fileName) {
+            var fileText = typescript__WEBPACK_IMPORTED_MODULE_2__["sys"].readFile(getFileName(fileName)) || '';
+            // console.log("scriptSnapShpt", fileName, fileText);
+            var range = Object(_helpers__WEBPACK_IMPORTED_MODULE_3__["getRangeFromXmlNode"])(fileText, 'script');
+            // console.log("range", range);
+            fileText = fileText.substring(range.start, range.end);
+            // console.log("fileText", fileText);
+            return typescript__WEBPACK_IMPORTED_MODULE_2__["ScriptSnapshot"].fromString(fileText);
+        },
+        getScriptVersion: function (fileName) {
+            if (fileName.includes('node_modules')) {
+                return '0';
+            }
+            return '0';
+        },
+        fileExists: function (fileName) {
+            return typescript__WEBPACK_IMPORTED_MODULE_2__["sys"].fileExists(getFileName(fileName));
+        },
+        directoryExists: typescript__WEBPACK_IMPORTED_MODULE_2__["sys"].directoryExists,
+        readFile: function (path, encoding) {
+            return typescript__WEBPACK_IMPORTED_MODULE_2__["sys"].readFile(getFileName(path), encoding);
+        }
+    };
+    var registry = Object(typescript__WEBPACK_IMPORTED_MODULE_2__["createDocumentRegistry"])(false, workSpaceDir);
+    var newService = Object(typescript__WEBPACK_IMPORTED_MODULE_2__["createLanguageService"])(host, registry);
+    return newService;
 }
 
 
@@ -70835,6 +71142,17 @@ module.exports = require("os");
 /***/ (function(module, exports) {
 
 module.exports = require("path");
+
+/***/ }),
+
+/***/ "typescript":
+/*!*****************************!*\
+  !*** external "typescript" ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("typescript");
 
 /***/ }),
 

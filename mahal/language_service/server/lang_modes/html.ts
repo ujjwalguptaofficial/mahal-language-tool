@@ -22,24 +22,19 @@ export function getHTMLMode(htmlLanguageService: LanguageService, documentRegion
 			console.log("called html do complete", `'${embedded.getText()}'`);
 			// const list = doComplete(embedded, position, 'html', {
 			// });
-			try {
-				const list = htmlLanguageService.doComplete(
-					embedded, position, html
-				);
-				const emmetResults = (
-					doComplete(embedded, position, 'html', {}) || {}
-				).items || [];
+			const list = htmlLanguageService.doComplete(
+				embedded, position, html
+			);
+			const emmetResults = (
+				doComplete(embedded, position, 'html', {}) || {}
+			).items || [];
 
-				return CompletionList.create([
-					...emmetResults,
-					...list.items
-				],
-					emmetResults.length > 0
-				)
-			} catch (error) {
-				console.error("error", error);
-				return null;
-			}
+			return CompletionList.create([
+				...emmetResults,
+				...list.items
+			],
+				emmetResults.length > 0
+			)
 
 			// console.log("list", list.items);
 			// return list;
