@@ -12,9 +12,13 @@ export interface HTMLDocumentRegions {
     getImportedScripts(): string[];
 }
 
-interface EmbeddedRegion { languageId: string | undefined; start: number; end: number; attributeValue?: boolean; }
+interface EmbeddedRegion {
+    languageId: string | undefined;
+    start: number; end: number;
+    attributeValue?: boolean;
+}
 
- 
+
 
 export function getDocumentRegions(languageService: LanguageService, document: TextDocument): HTMLDocumentRegions {
     const regions: EmbeddedRegion[] = [];
@@ -283,4 +287,3 @@ function getAttributeLanguage(attributeName: string): string | null {
     }
     return match[1] ? 'css' : 'javascript';
 }
-

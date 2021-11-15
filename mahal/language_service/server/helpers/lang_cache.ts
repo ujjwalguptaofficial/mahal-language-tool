@@ -1,11 +1,23 @@
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { ILanguageCache } from "../interfaces";
+import { ILangCache } from "../interfaces";
 
-export function getLanguageCache<T>(maxEntries: number, cleanupIntervalTimeInSec: number, parse: (document: TextDocument) => T): ILanguageCache<T> {
-    let languageModels: { [uri: string]: { version: number, languageId: string, cTime: number, languageModel: T } } = {};
+
+export function getLanguageModelCache<T>(
+    maxEntries: number,
+    cleanupIntervalTimeInSec: number,
+    parse: (document: TextDocument) => T
+): ILangCache<T> {
+    let languageModels: {
+        [uri: string]: {
+            version: number;
+            languageId: string;
+            cTime: number; languageModel: T
+        }
+    } = {};
+
     let nModels = 0;
 
-    let cleanupInterval;
+    let cleanupInterval: NodeJS.Timer;
     if (cleanupIntervalTimeInSec > 0) {
         cleanupInterval = setInterval(() => {
             const cutoffTime = Date.now() - cleanupIntervalTimeInSec * 1000;
@@ -21,7 +33,7 @@ export function getLanguageCache<T>(maxEntries: number, cleanupIntervalTimeInSec
     }
 
     return {
-        get(document: TextDocument): T {
+        refreshAndGet(document: TextDocument): T {
             const version = document.version;
             const languageId = document.languageId;
             const languageModelInfo = languageModels[document.uri];
@@ -51,7 +63,6 @@ export function getLanguageCache<T>(maxEntries: number, cleanupIntervalTimeInSec
                 }
             }
             return languageModel;
-
         },
         onDocumentRemoved(document: TextDocument) {
             const uri = document.uri;
@@ -63,7 +74,7 @@ export function getLanguageCache<T>(maxEntries: number, cleanupIntervalTimeInSec
         dispose() {
             if (typeof cleanupInterval !== 'undefined') {
                 clearInterval(cleanupInterval);
-                cleanupInterval = undefined;
+                cleanupInterval = null as any;
                 languageModels = {};
                 nModels = 0;
             }
