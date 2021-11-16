@@ -2,12 +2,12 @@ import { doComplete } from "vscode-emmet-helper";
 import { CompletionList, LanguageService, TextDocument } from "vscode-html-languageservice";
 import { Position } from "vscode-languageserver-textdocument";
 import { MahalLang } from "../abstracts";
-import { ILangCache, IMahalDocCache } from "../interfaces";
+import { DocManager } from "../managers";
 
 export class HtmlLang extends MahalLang {
     constructor(
         private langService: LanguageService,
-        private documentCache: ILangCache<IMahalDocCache>
+        private docManager: DocManager
     ) {
         super();
     }
@@ -17,7 +17,8 @@ export class HtmlLang extends MahalLang {
     }
 
     private getDoc_(document: TextDocument) {
-        return this.documentCache.refreshAndGet(document).getEmbeddedDocument(
+        return this.docManager.getEmbeddedDocument(
+            document,
             this.id
         )
     }
@@ -36,16 +37,17 @@ export class HtmlLang extends MahalLang {
             }
         ).then(htmlList => {
             const emmetResults = doComplete(
-                doc, position, 'html',
+                doc, position, this.id,
                 {
 
                 }
-            ).items || [];
+            );
+            const emmetItems = emmetResults ? emmetResults.items : [];
             return CompletionList.create([
-                ...emmetResults,
+                ...emmetItems,
                 ...htmlList.items
             ],
-                emmetResults.length > 0
+                emmetItems.length > 0
             )
         })
     }

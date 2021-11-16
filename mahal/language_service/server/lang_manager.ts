@@ -1,55 +1,66 @@
 import { getLanguageService } from 'vscode-html-languageservice';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Position, TextDocumentIdentifier, TextDocuments } from 'vscode-languageserver/node';
+import { Connection, Position, TextDocumentIdentifier } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
-import { getDocumentRegions, getLanguageModelCache } from './helpers';
-import { ILangCache, IMahalDocCache } from './interfaces';
 import { HtmlLang } from './langs';
+import { DocManager } from './managers';
 
 export class LangManager {
-
-
-    documents = new TextDocuments(TextDocument);
 
     langs: { [id: string]: MahalLang } = {
 
     };
 
-    documentCache: ILangCache<IMahalDocCache>;
+    docManager: DocManager;
 
-    constructor(connection) {
-
-        // listend and update text doc
-        this.documents.listen(connection);
-
-
+    listen(connection: Connection) {
         const htmlService = getLanguageService();
-        this.documentCache = getLanguageModelCache<IMahalDocCache>(10, 60, document => {
-            return getDocumentRegions(htmlService, document);
-        });
+
+        const docManager = this.docManager = new DocManager(
+            htmlService
+        );
+
+        connection.onDidOpenTextDocument(
+            docManager.onOpenTextDocument.bind(docManager)
+        );
+        connection.onDidChangeTextDocument(
+            docManager.didChangeTextDocument.bind(docManager)
+        );
+
+        connection.onDidSaveTextDocument(
+            docManager.didSaveTextDocument.bind(docManager)
+        );
+        connection.onDidCloseTextDocument(
+            docManager.didCloseTextDocument.bind(docManager)
+        );
+
 
         this.langs['html'] = new HtmlLang(
-            htmlService, this.documentCache
+            htmlService, this.docManager
         );
     }
 
     doComplete(docIdentifier: TextDocumentIdentifier, position: Position) {
         const uri = docIdentifier.uri;
-        const document = this.documents.get(
+        console.log("doComplete", uri);
+        console.log("keys",
+            Array.from(this.docManager.docs.keys as any)
+        )
+        const document = this.docManager.getByURI(
             uri
         );
         if (!document) {
             throw new Error('The document should be opened for completion, file: ' + uri);
         }
 
-        const languageId = this.documentCache.refreshAndGet(
-            document
-        ).getLanguageAtPosition(position);
+        const languageId = this.docManager.getLanguageAtPosition(
+            document.textDoc,
+            position
+        );
 
         console.log("languageId", languageId);
         const activeLang = this.langs[languageId];
 
-        return activeLang.doComplete(document, position);
+        return activeLang.doComplete(document.textDoc, position);
 
     }
 
