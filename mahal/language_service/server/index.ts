@@ -31,7 +31,7 @@ connection.onInitialize((params) => {
             //         // Commands.APPLY_RENAME_FILE
             //     ]
             // },
-            // hoverProvider: true,
+            hoverProvider: true,
             // renameProvider: true,
             // referencesProvider: true,
             // signatureHelpProvider: {
@@ -46,10 +46,13 @@ connection.onInitialize((params) => {
 });
 
 connection.onCompletion((params) => {
-    console.log("onCompletion params", params);
     return langManager.doComplete(
         params.textDocument, params.position
     );
+});
+
+connection.onHover((params) => {
+    return langManager.doHover(params.textDocument, params.position)
 });
 
 

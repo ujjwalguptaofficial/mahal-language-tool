@@ -5,26 +5,18 @@ import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
 
 export class HtmlLang extends MahalLang {
+
+    readonly id = 'html';
+
     constructor(
         private langService: LanguageService,
-        private docManager: DocManager
+        docManager: DocManager
     ) {
-        super();
-    }
-
-    get id() {
-        return 'html'
-    }
-
-    private getDoc_(document: TextDocument) {
-        return this.docManager.getEmbeddedDocument(
-            document,
-            this.id
-        )
+        super(docManager);
     }
 
     doComplete(document: TextDocument, position: Position) {
-        const doc = this.getDoc_(document);
+        const doc = this.getDoc(document);
 
         return this.langService.doComplete2(
             doc,
@@ -43,6 +35,7 @@ export class HtmlLang extends MahalLang {
                 }
             );
             const emmetItems = emmetResults ? emmetResults.items : [];
+            // console.log("emmetItems", emmetItems.length);
             return CompletionList.create([
                 ...emmetItems,
                 ...htmlList.items
@@ -50,5 +43,16 @@ export class HtmlLang extends MahalLang {
                 emmetItems.length > 0
             )
         })
+    }
+
+    doHover(document: TextDocument, position: Position) {
+
+        const doc = this.getDoc(document);
+
+        return this.langService.doHover(
+            doc,
+            position,
+            this.langService.parseHTMLDocument(doc)
+        )
     }
 }

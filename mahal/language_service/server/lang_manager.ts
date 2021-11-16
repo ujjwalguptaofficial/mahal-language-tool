@@ -41,10 +41,6 @@ export class LangManager {
 
     doComplete(docIdentifier: TextDocumentIdentifier, position: Position) {
         const uri = docIdentifier.uri;
-        console.log("doComplete", uri);
-        console.log("keys",
-            Array.from(this.docManager.docs.keys as any)
-        )
         const document = this.docManager.getByURI(
             uri
         );
@@ -62,6 +58,24 @@ export class LangManager {
 
         return activeLang.doComplete(document.textDoc, position);
 
+    }
+
+    doHover(docIdentifier: TextDocumentIdentifier, position: Position) {
+        const uri = docIdentifier.uri;
+        const document = this.docManager.getByURI(
+            uri
+        );
+        if (!document) {
+            throw new Error('The document should be opened for completion, file: ' + uri);
+        }
+
+        const languageId = this.docManager.getLanguageAtPosition(
+            document.textDoc,
+            position
+        );
+
+        const activeLang = this.langs[languageId];
+        return activeLang.doHover(document.textDoc, position);
     }
 
 
