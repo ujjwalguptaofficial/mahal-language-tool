@@ -1,17 +1,17 @@
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { EmbeddedRegion } from "../interfaces";
 
-export function getEmbeddedDocument(document: TextDocument, contents: EmbeddedRegion[], languageId: string, ignoreAttributeValues: boolean): TextDocument {
+export function getEmbeddedDocument(document: TextDocument, regions: EmbeddedRegion[], languageId: string, ignoreAttributeValues: boolean): TextDocument {
     let currentPos = 0;
     const oldContent = document.getText();
     let result = '';
     let lastSuffix = '';
-    for (const c of contents) {
-        if (c.languageId === languageId && (!ignoreAttributeValues || !c.attributeValue)) {
-            result = substituteWithWhitespace(result, currentPos, c.start, oldContent, lastSuffix, getPrefix(c));
-            result += oldContent.substring(c.start, c.end);
-            currentPos = c.end;
-            lastSuffix = getSuffix(c);
+    for (const region of regions) {
+        if (region.languageId === languageId && (!ignoreAttributeValues || !region.attributeValue)) {
+            result = substituteWithWhitespace(result, currentPos, region.start, oldContent, lastSuffix, getPrefix(region));
+            result += oldContent.substring(region.start, region.end);
+            currentPos = region.end;
+            lastSuffix = getSuffix(region);
         }
     }
     result = substituteWithWhitespace(result, currentPos, oldContent.length, oldContent, lastSuffix, '');

@@ -5,9 +5,10 @@ import { LangManager } from "./lang_manager";
 
 let connection = createConnection(ProposedFeatures.all);
 let langManager = new LangManager();
-langManager.listen(connection);
 
 connection.onInitialize((params) => {
+    langManager.listen(connection, params);
+
     return {
         capabilities: {
             textDocumentSync: TextDocumentSyncKind.Full,

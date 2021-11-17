@@ -12,10 +12,16 @@ export class MahalDoc {
 
     textDoc: TextDocument
 
-    constructor(languageService: LanguageService, document: TextDocument) {
+    constructor(private languageService: LanguageService, document: TextDocument) {
+        this.setTextDoc(
+            document
+        )
+    }
+
+    setTextDoc(document: TextDocument) {
         this.textDoc = document;
         this.regions = this.getDocumentRegions(
-            languageService, document
+            this.languageService, document
         )
     }
 
@@ -47,10 +53,12 @@ export class MahalDoc {
             const end = this.offsetAt(change.range.end);
             newContent = content.substr(0, start) + change.text + content.substr(end);
         }
-        this.textDoc = TextDocument.create(
-            this.uri,
-            this.languageId,
-            version, newContent
+        this.setTextDoc(
+            TextDocument.create(
+                this.uri,
+                this.languageId,
+                version, newContent
+            )
         );
     }
 

@@ -1,8 +1,9 @@
 import { getLanguageService } from 'vscode-html-languageservice';
-import { Connection, Position, TextDocumentIdentifier } from 'vscode-languageserver/node';
+import { Connection, InitializeParams, Position, TextDocumentIdentifier } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
-import { HtmlLang } from './langs';
+import { HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
+import { getTypescriptService } from './services';
 
 export class LangManager {
 
@@ -12,12 +13,19 @@ export class LangManager {
 
     docManager: DocManager;
 
-    listen(connection: Connection) {
+    listen(connection: Connection, params: InitializeParams) {
         const htmlService = getLanguageService();
+
+
 
         const docManager = this.docManager = new DocManager(
             htmlService
         );
+
+        const jsService = getTypescriptService(params,
+            docManager
+        );
+
 
         connection.onDidOpenTextDocument(
             docManager.onOpenTextDocument.bind(docManager)
@@ -37,6 +45,11 @@ export class LangManager {
         this.langs['html'] = new HtmlLang(
             htmlService, this.docManager
         );
+        // if (jsService) {
+        //     this.langs['javascript'] = new JsLang(
+        //         jsService, this.docManager
+        //     );
+        // }
     }
 
     doComplete(docIdentifier: TextDocumentIdentifier, position: Position) {
@@ -55,9 +68,9 @@ export class LangManager {
 
         console.log("languageId", languageId);
         const activeLang = this.langs[languageId];
-
-        return activeLang.doComplete(document.textDoc, position);
-
+        if (activeLang) {
+            return activeLang.doComplete(document.textDoc, position);
+        }
     }
 
     doHover(docIdentifier: TextDocumentIdentifier, position: Position) {

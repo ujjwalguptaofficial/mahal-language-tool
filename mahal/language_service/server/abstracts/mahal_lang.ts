@@ -12,7 +12,7 @@ export abstract class MahalLang {
 
     protected getDoc(document: TextDocument) {
         return this.docManager.getEmbeddedDocument(
-            document,
+            document.uri,
             this.id
         )
     }

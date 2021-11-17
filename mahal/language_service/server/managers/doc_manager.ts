@@ -18,7 +18,7 @@ export class DocManager {
         return this.docs.get(uri);
     }
 
-    saveUpdate(document: TextDocument) {
+    save(document: TextDocument) {
         this.docs.set(
             document.uri,
             new MahalDoc(this.languageService, document)
@@ -39,7 +39,7 @@ export class DocManager {
 
     onOpenTextDocument(params: DidOpenTextDocumentParams) {
         const { textDocument } = params;
-        this.saveUpdate(
+        this.save(
             TextDocument.create(
                 textDocument.uri, textDocument.languageId,
                 textDocument.version, textDocument.text
@@ -80,28 +80,39 @@ export class DocManager {
         }
     }
 
-    getEmbeddedDocument(document: TextDocument, languageId: string, ignoreAttributeValues?: boolean): TextDocument {
-        const region = this.getByURI(document.uri).regions;
-        return getEmbeddedDocument(
-            document,
-            region,
-            languageId,
-            ignoreAttributeValues
+    getEmbeddedDocument(uri: string, languageId: string, ignoreAttributeValues?: boolean): TextDocument {
+        const doc = this.getByURI(uri);
+        if (doc) {
+            const region = this.getByURI(uri).regions
+
+            return getEmbeddedDocument(
+                doc.textDoc,
+                region,
+                languageId,
+                ignoreAttributeValues
+            )
+        }
+
+        return TextDocument.create(
+            uri,
+            languageId, 0, ''
         )
     }
 
     getLanguageAtPosition(document: TextDocument, position: Position) {
         const regions = this.getByURI(document.uri).regions;
         const offset = document.offsetAt(position);
-        for (const region of regions) {
-            if (region.start <= offset) {
-                if (offset <= region.end) {
-                    return region.languageId;
-                }
-            } else {
-                break;
+
+        const region = regions.find(region => {
+            if (offset >= region.start && offset <= region.end) {
+                return true;
             }
+            return false;
+        })
+        if (region) {
+            return region.languageId;
         }
-        return 'html';
+        console.log("regions", regions);
+        return 'unknown';
     }
 }
