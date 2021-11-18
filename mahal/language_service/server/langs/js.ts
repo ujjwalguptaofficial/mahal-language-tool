@@ -22,10 +22,10 @@ export class JsLang extends MahalLang {
             return { isIncomplete: false, items: [] };
         }
         const triggerCharValue = getTsTriggerCharacter(triggerChar);
-        console.log("triggerCharValue", triggerCharValue);
+        console.log("offset", offset);
 
         const result = this.langService.getCompletionsAtPosition(
-            document.uri, offset,
+            document.uri + ".ts", offset,
             {
                 allowIncompleteCompletions: true,
                 allowTextChangesInNewFiles: true,
@@ -35,7 +35,8 @@ export class JsLang extends MahalLang {
                 includeCompletionsForImportStatements: true,
                 includeCompletionsForModuleExports: true,
                 includeCompletionsWithSnippetText: true,
-                includePackageJsonAutoImports: "auto"
+                includePackageJsonAutoImports: "auto",
+                
             }
         )
 

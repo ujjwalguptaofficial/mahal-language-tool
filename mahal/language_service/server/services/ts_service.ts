@@ -44,7 +44,7 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
     const fileNames = sys.readDirectory(
         workSpaceDir, ['mahal', 'mhl']
     ).map(item => {
-        return item + ".ts";
+        return pathToFileURL(item + ".ts").href;
     })
     console.log("dir", fileNames);
     const getFileName = (fileName: string) => {
@@ -66,13 +66,13 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
             return fileNames;
         },
         getScriptSnapshot(filePath) {
-            const uri = pathToFileURL(getFileName(filePath)).href;
+            const uri = getFileName(filePath);
             const doc = docManager.getEmbeddedDocument(
                 uri,
                 'javascript'
             );
             const fileText = doc ? doc.getText() : '';
-            // console.log("scriptSnapShpt", filePath, fileText);
+            // console.log("scriptSnapShpt", uri, filePath, fileText, Array.from(docManager.docs.keys()));
             // console.log("fileText", fileText);
             return ScriptSnapshot.fromString(fileText);
         },
@@ -83,15 +83,19 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
             return '0';
         },
         fileExists(filePath) {
+            console.log("file exist", filePath);
             const uri = pathToFileURL(getFileName(filePath)).href;
             const doc = docManager.getEmbeddedDocument(
                 uri,
                 'javascript'
             );
+            console.log("file exist", doc != null);
             return doc != null;
         },
         directoryExists: sys.directoryExists,
         readFile(filePath, encoding) {
+            console.log("readFile", filePath);
+
             const uri = pathToFileURL(getFileName(filePath)).href;
             const doc = docManager.getEmbeddedDocument(
                 uri,

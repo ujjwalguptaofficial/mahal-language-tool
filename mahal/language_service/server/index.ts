@@ -47,9 +47,13 @@ connection.onInitialize((params) => {
 });
 
 connection.onCompletion((params) => {
-    return langManager.doComplete(
-        params.textDocument, params.position
-    );
+    try {
+        return langManager.doComplete(
+            params.textDocument, params.position
+        );
+    } catch (error) {
+        console.log("error", error);
+    }
 });
 
 connection.onHover((params) => {

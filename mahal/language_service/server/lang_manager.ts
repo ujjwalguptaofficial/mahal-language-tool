@@ -45,11 +45,11 @@ export class LangManager {
         this.langs['html'] = new HtmlLang(
             htmlService, this.docManager
         );
-        // if (jsService) {
-        //     this.langs['javascript'] = new JsLang(
-        //         jsService, this.docManager
-        //     );
-        // }
+        if (jsService) {
+            this.langs['javascript'] = new JsLang(
+                jsService, this.docManager
+            );
+        }
     }
 
     doComplete(docIdentifier: TextDocumentIdentifier, position: Position) {
