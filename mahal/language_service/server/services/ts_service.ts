@@ -17,21 +17,18 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
 
     const workSpaceDir = fileURLToPath(activeWorkSpace.uri);
 
-    console.log('searchDir', workSpaceDir);
-
+    console.log('workSpaceDir', workSpaceDir);
 
     const tsConfigPath = findConfigFile(process.cwd(), sys.fileExists, 'tsconfig.json') ||
         findConfigFile(workSpaceDir, sys.fileExists, 'jsconfig.json');
     let tsConfig;
     if (tsConfigPath) {
         tsConfig = sys.readFile(tsConfigPath);
-
     }
     else {
         tsConfig = {
             allowJs: true,
-            declaration: false,
-
+            declaration: false
         } as CompilerOptions
     }
 

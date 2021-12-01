@@ -1,8 +1,9 @@
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
-import { CompletionEntry, CompletionsTriggerCharacter, createScanner, displayPartsToString, LanguageService, ScriptElementKind } from "typescript";
+import { CompletionEntry, CompletionsTriggerCharacter, createScanner, displayPartsToString, LanguageService, Program, ScriptElementKind, TextSpan } from "typescript";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, InsertTextFormat, Position } from "vscode-languageserver/node";
+import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp } from "vscode-languageserver/node";
+import * as Previewer from '../utils/previewer';
 
 export class JsLang extends MahalLang {
     readonly id = 'javascript';
@@ -95,21 +96,56 @@ export class JsLang extends MahalLang {
             return completionItem;
         });
         // console.log("items", items.map(item => item.label));
-        return Promise.resolve(
-            CompletionList.create(items, false)
-        );
+        return CompletionList.create(items, false)
+
+    }
+
+    getFileName(uri) {
+        return uri + ".ts";
     }
 
     doHover(document: TextDocument, position: Position) {
+        const uri = document.uri;
+        const savedDoc = this.getDoc(document);
+        const offset = savedDoc.offsetAt(position);
+        const info = this.langService.getQuickInfoAtPosition(
+            this.getFileName(uri), offset
+        )
+        if (info) {
+            let hoverMdDoc = '';
+            const doc = Previewer.plain(
+                displayPartsToString(info.documentation));
+            if (doc) {
+                hoverMdDoc += doc + '\n\n';
+            }
+
+            if (info.tags) {
+                info.tags.forEach(x => {
+                    const tagDoc = Previewer.getTagDocumentation(x);
+                    if (tagDoc) {
+                        hoverMdDoc += tagDoc + '\n\n';
+                    }
+                });
+            }
+            let markedContents: MarkupContent;
+            if (hoverMdDoc.trim() !== '') {
+                markedContents = {
+                    kind: MarkupKind.Markdown,
+                    value: hoverMdDoc
+                } as MarkupContent;
+            }
+            else {
+                markedContents = {
+                    kind: MarkupKind.PlainText,
+                    value: displayPartsToString(info.displayParts)
+                } as MarkupContent;
+            }
+            return {
+                contents: markedContents,
+                range: convertRange(savedDoc, info.textSpan),
+            } as Hover;
+        }
         return null;
-
-        // const doc = this.getDoc(document);
-
-        // return this.langService.(
-        //     doc,
-        //     position,
-        //     this.langService.parseHTMLDocument(doc)
-        // )
     }
 
     doResolve(item: CompletionItem) {
@@ -144,8 +180,104 @@ export class JsLang extends MahalLang {
         }
         return item;
     }
+    getReferences(document: TextDocument, position: Position): Location[] {
+        const uri = document.uri;
+        const savedDoc = this.getDoc(document);
+        const offset = savedDoc.offsetAt(position);
+        const references = this.langService.getReferencesAtPosition(
+            this.getFileName(uri),
+            offset
+        );
+        if (!references) {
+            return [];
+        }
+        const referenceResults: Location[] = [];
+        const program = this.langService.getProgram();
+        if (!program) {
+            return [];
+        }
+        references.forEach(r => {
+            const referenceTargetDoc = getSourceDoc(r.fileName, program);
+            if (referenceTargetDoc) {
+                referenceResults.push({
+                    uri: uri,
+                    range: convertRange(referenceTargetDoc, r.textSpan)
+                });
+            }
+        });
+        return referenceResults;
+    }
+    getSignatureHelp(document: TextDocument, position: Position): SignatureHelp | null {
+        const uri = document.uri;
+        const savedDoc = this.getDoc(document);
+        const offset = savedDoc.offsetAt(position);
+        const signatureHelpItems = this.langService.getSignatureHelpItems(
+            this.getFileName(uri), offset, {}
+        );
+        if (!signatureHelpItems) {
+            return null;
+        }
+
+        const signatures: SignatureInformation[] = [];
+        signatureHelpItems.items.forEach(item => {
+            let sigLabel = '';
+            let sigMdDoc = '';
+            const sigParamemterInfos: ParameterInformation[] = [];
+
+            sigLabel += displayPartsToString(item.prefixDisplayParts);
+            item.parameters.forEach((p, i, a) => {
+                const label = displayPartsToString(p.displayParts);
+                const parameter: ParameterInformation = {
+                    label,
+                    documentation: displayPartsToString(p.documentation)
+                };
+                sigLabel += label;
+                sigParamemterInfos.push(parameter);
+                if (i < a.length - 1) {
+                    sigLabel += displayPartsToString(item.separatorDisplayParts);
+                }
+            });
+            sigLabel += displayPartsToString(item.suffixDisplayParts);
+
+            item.tags
+                .filter(x => x.name !== 'param')
+                .forEach(x => {
+                    const tagDoc = Previewer.getTagDocumentation(x);
+                    if (tagDoc) {
+                        sigMdDoc += tagDoc + '\n\n';
+                    }
+                });
+
+            signatures.push({
+                label: sigLabel,
+                documentation: {
+                    kind: 'markdown',
+                    value: sigMdDoc
+                },
+                parameters: sigParamemterInfos
+            });
+        });
+
+        return {
+            activeSignature: signatureHelpItems.selectedItemIndex,
+            activeParameter: signatureHelpItems.argumentIndex,
+            signatures
+        } as SignatureHelp;
+    }
 
 }
+
+function getSourceDoc(fileName: string, program: Program): TextDocument {
+    const sourceFile = program.getSourceFile(fileName)!;
+    return TextDocument.create(fileName, 'vue', 0, sourceFile.getFullText());
+}
+
+function convertRange(document: TextDocument, span: TextSpan): Range {
+    const startPosition = document.positionAt(span.start);
+    const endPosition = document.positionAt(span.start + span.length);
+    return Range.create(startPosition, endPosition);
+}
+
 
 function parseKindModifier(kindModifiers: string) {
     const kinds = new Set(kindModifiers.split(/,|\s+/g));

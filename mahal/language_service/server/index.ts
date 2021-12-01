@@ -34,10 +34,10 @@ connection.onInitialize((params) => {
             // },
             hoverProvider: true,
             // renameProvider: true,
-            // referencesProvider: true,
-            // signatureHelpProvider: {
-            //     triggerCharacters: ['(', ',', '<']
-            // },
+            referencesProvider: true,
+            signatureHelpProvider: {
+                triggerCharacters: ['(', ',']
+            },
             // workspaceSymbolProvider: true,
             // implementationProvider: true,
             // typeDefinitionProvider: true,
@@ -64,6 +64,14 @@ connection.onHover((params) => {
 connection.onCompletionResolve((params) => {
     return langManager.doCompletionResolve(params);
 });
+
+connection.onReferences((params) => {
+    return langManager.getReferences(params);
+})
+
+connection.onSignatureHelp((params) => {
+    return langManager.getSingatureHelp(params);
+})
 
 
 connection.listen();

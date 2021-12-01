@@ -1,5 +1,6 @@
-import { CompletionItem, CompletionList, Hover } from "vscode-languageserver-protocol/node";
+import { CompletionItem, Location, CompletionList, Hover } from "vscode-languageserver-protocol/node";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
+import { SignatureHelp } from "vscode-languageserver/node";
 import { DocManager } from "../managers";
 
 export abstract class MahalLang {
@@ -18,7 +19,9 @@ export abstract class MahalLang {
     }
 
     abstract id: string;
-    abstract doComplete(document: TextDocument, position: Position): Promise<CompletionList>;
+    abstract doComplete(document: TextDocument, position: Position): CompletionList | Promise<CompletionList>;
     abstract doHover(document: TextDocument, position: Position): Hover;
-    abstract doResolve?(item: CompletionItem): CompletionItem;
+    abstract doResolve(item: CompletionItem): CompletionItem;
+    abstract getReferences(document: TextDocument, position: Position): Location[];
+    abstract getSignatureHelp(document: TextDocument, position: Position): SignatureHelp;
 }

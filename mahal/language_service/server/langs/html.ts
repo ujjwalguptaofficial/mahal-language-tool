@@ -59,4 +59,11 @@ export class HtmlLang extends MahalLang {
     doResolve() {
         return null
     }
+    getSignatureHelp() {
+        return null
+    }
+
+    getReferences() {
+        return [];
+    }
 }
