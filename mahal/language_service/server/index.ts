@@ -21,8 +21,8 @@ connection.onInitialize((params) => {
             // definitionProvider: true,
             // documentFormattingProvider: true,
             // documentRangeFormattingProvider: true,
-            // documentHighlightProvider: true,
-            // documentSymbolProvider: true,
+            documentHighlightProvider: true,
+            documentSymbolProvider: true,
             // executeCommandProvider: {
             //     commands: [
             //         // Commands.APPLY_WORKSPACE_EDIT,
@@ -70,7 +70,13 @@ connection.onReferences((params) => {
 })
 
 connection.onSignatureHelp((params) => {
-    return langManager.getSingatureHelp(params);
+    return langManager.getSignatureHelp(params);
+})
+connection.onDocumentSymbol((params) => {
+    return langManager.getDocumentSymbols(params);
+})
+connection.onDocumentHighlight((params) => {
+    return langManager.getDocumentHighlight(params);
 })
 
 

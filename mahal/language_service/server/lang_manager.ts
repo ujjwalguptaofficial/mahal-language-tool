@@ -1,5 +1,5 @@
 import { getLanguageService } from 'vscode-html-languageservice';
-import { CompletionItem, Connection, InitializeParams, Position, ReferenceParams, SignatureHelpParams, TextDocumentIdentifier } from 'vscode-languageserver/node';
+import { CompletionItem, Connection, DocumentHighlightParams, DocumentSymbolParams, InitializeParams, Position, ReferenceParams, SignatureHelpParams, SymbolInformation, TextDocumentIdentifier } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
 import { HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
@@ -134,7 +134,7 @@ export class LangManager {
             );
         }
     }
-    getSingatureHelp(params: SignatureHelpParams) {
+    getSignatureHelp(params: SignatureHelpParams) {
         const uri = params.textDocument.uri;
         const document = this.docManager.getByURI(
             uri
@@ -155,6 +155,45 @@ export class LangManager {
             );
         }
     }
+    getDocumentSymbols(params: DocumentSymbolParams) {
+        const uri = params.textDocument.uri;
+        const document = this.docManager.getByURI(
+            uri
+        );
+        if (!document) {
+            throw new Error('The document should be opened for completion, file: ' + uri);
+        }
+        let symbols: SymbolInformation[] = [];
+        for (const languageId in this.langs) {
+            const lang = this.langs[languageId];
+            symbols = symbols.concat(
+                lang.getDocumentSymbols(document.textDoc)
+            )
+        }
 
+        return symbols;
+
+    }
+    getDocumentHighlight(params: DocumentHighlightParams) {
+        const uri = params.textDocument.uri;
+        const document = this.docManager.getByURI(
+            uri
+        );
+        if (!document) {
+            throw new Error('The document should be opened for completion, file: ' + uri);
+        }
+
+        const languageId = this.docManager.getLanguageAtPosition(
+            document.textDoc,
+            params.position
+        );
+
+        const activeLang = this.langs[languageId];
+        if (activeLang) {
+            return activeLang.getDocumentHighlight(
+                document.textDoc, params.position
+            );
+        }
+    }
 
 }

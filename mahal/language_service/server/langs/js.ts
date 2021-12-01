@@ -1,9 +1,10 @@
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
-import { CompletionEntry, CompletionsTriggerCharacter, createScanner, displayPartsToString, LanguageService, Program, ScriptElementKind, TextSpan } from "typescript";
+import { CompletionEntry, CompletionsTriggerCharacter, createScanner, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, TextSpan } from "typescript";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp } from "vscode-languageserver/node";
+import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight } from "vscode-languageserver/node";
 import * as Previewer from '../utils/previewer';
+import { toSymbolKind } from "../utils";
 
 export class JsLang extends MahalLang {
     readonly id = 'javascript';
@@ -264,7 +265,64 @@ export class JsLang extends MahalLang {
             signatures
         } as SignatureHelp;
     }
+    getDocumentSymbols(document: TextDocument) {
+        const uri = document.uri;
+        const savedDoc = this.getDoc(document);
+        // const offset = savedDoc.offsetAt(position);
+        const items = this.langService.getNavigationBarItems(
+            this.getFileName(uri)
+        );
+        if (!items) {
+            return [];
+        }
+        const result: SymbolInformation[] = [];
+        const existing: { [k: string]: boolean } = {};
+        const collectSymbols = (item: NavigationBarItem, containerLabel?: string) => {
+            const sig = item.text + item.kind + item.spans[0].start;
+            if (item.kind !== 'script' && !existing[sig]) {
+                const symbol: SymbolInformation = {
+                    name: item.text,
+                    kind: toSymbolKind(item.kind),
+                    location: {
+                        uri: uri,
+                        range: convertRange(savedDoc, item.spans[0])
+                    },
+                    containerName: containerLabel
+                };
+                existing[sig] = true;
+                result.push(symbol);
+                containerLabel = item.text;
+            }
 
+            if (item.childItems && item.childItems.length > 0) {
+                for (const child of item.childItems) {
+                    collectSymbols(child, containerLabel);
+                }
+            }
+        };
+
+        items.forEach(item => collectSymbols(item));
+        return result;
+    }
+    getDocumentHighlight(document: TextDocument, position: Position): DocumentHighlight[] {
+
+        const uri = document.uri;
+        const savedDoc = this.getDoc(document);
+        const offset = savedDoc.offsetAt(position);
+
+        const occurrences = this.langService.getReferencesAtPosition(
+            this.getFileName(uri), offset
+        );
+        if (!occurrences) {
+            return []
+        }
+        return occurrences.map(entry => {
+            return {
+                range: convertRange(savedDoc, entry.textSpan),
+                kind: entry.isWriteAccess ? DocumentHighlightKind.Write : DocumentHighlightKind.Text
+            };
+        });
+    }
 }
 
 function getSourceDoc(fileName: string, program: Program): TextDocument {
