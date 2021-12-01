@@ -50,7 +50,7 @@ export function getDocumentRegions(languageService: LanguageService, document: T
     const scriptStart = result.start;
     const scriptEnd = result.end;
     if (scriptStart && scriptEnd) {
-        console.log("pushed script", result);
+        // console.log("pushed script", result);
         regions.push({ languageId: 'javascript', start: scriptStart, end: scriptEnd });
     }
 

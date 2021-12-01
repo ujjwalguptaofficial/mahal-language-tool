@@ -21,7 +21,7 @@ export class JsLang extends MahalLang {
         const offset = savedDoc.offsetAt(position);
         const fileText = savedDoc.getText();
 
-        console.log("saved fileText", fileText.split(""), fileText.length, `'${fileText}'`);
+        // console.log("saved fileText", fileText.split(""), fileText.length, `'${fileText}'`);
 
         const triggerChar = fileText[offset - 1];
         if (NON_SCRIPT_TRIGGERS.includes(triggerChar)) {
@@ -94,7 +94,7 @@ export class JsLang extends MahalLang {
             // console.log("completon item", completionItem);
             return completionItem;
         });
-        console.log("items", items.map(item => item.label));
+        // console.log("items", items.map(item => item.label));
         return Promise.resolve(
             CompletionList.create(items, false)
         );

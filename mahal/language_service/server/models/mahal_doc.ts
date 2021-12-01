@@ -94,7 +94,7 @@ export class MahalDoc {
         const scriptStart = result.start;
         const scriptEnd = result.end;
         if (scriptStart && scriptEnd) {
-            console.log("pushed script", result, getContentFromXmlNode(fullText,'script').length);
+            // console.log("pushed script", result, getContentFromXmlNode(fullText,'script').length);
             regions.push({ languageId: 'javascript', start: scriptStart, end: scriptEnd });
         }
 

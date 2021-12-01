@@ -24,31 +24,7 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
         findConfigFile(workSpaceDir, sys.fileExists, 'jsconfig.json');
     let tsConfig;
     if (tsConfigPath) {
-        tsConfig = {
-            "compilerOptions": {
-                "baseUrl": "",
-                "declaration": false,
-                "emitDecoratorMetadata": true,
-                "experimentalDecorators": true,
-                "lib": [
-                    "es2015",
-                    "dom",
-                    "webworker",
-                    "ES5",
-                    "ES6"
-                ],
-                "mapRoot": "./",
-                "module": "es6",
-                "moduleResolution": "node",
-                "outDir": "bin/ts",
-                "sourceMap": true,
-                "target": "es5"
-            }
-        }
-        
-        // readFileSync(tsConfigPath, {
-        //     encoding: 'utf8'
-        // });
+        tsConfig = sys.readFile(tsConfigPath);
 
     }
     else {
@@ -68,6 +44,9 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
     ).map(item => {
         return pathToFileURL(item + ".ts").href;
     })
+    fileNames.push(
+        getDefaultLibFilePath(tsConfig)
+    )
     console.log("dir", fileNames);
     const getFileName = (fileName: string) => {
         return fileName.substr(0, fileName.length - 3)
@@ -95,14 +74,23 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
             return fileNames;
         },
         getScriptSnapshot(filePath) {
-            const uri = getFileName(filePath);
-            const doc = docManager.getEmbeddedDocument(
-                uri,
-                'javascript'
-            );
-            const fileText = doc ? doc.getText() : '';
+            console.log("filePath", filePath)
+            let fileText;
+            if (filePath.includes('node_modules')) {
+                fileText = sys.readFile(filePath)
+            }
+            else {
+                const uri = getFileName(filePath);
+                console.log("uri", uri);
+                const doc = docManager.getEmbeddedDocument(
+                    uri,
+                    'javascript'
+                );
+                fileText = doc ? doc.getText() : '';
+            }
+
             // console.log("scriptSnapShpt", uri, filePath, fileText, Array.from(docManager.docs.keys()));
-            console.log("fileText", fileText.length, `'${fileText}'`);
+            // console.log("fileText", fileText.length, `'${fileText}'`);
             return ScriptSnapshot.fromString(fileText);
         },
         getScriptVersion(fileName) {
@@ -114,10 +102,7 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
         fileExists(filePath) {
             console.log("file exist", filePath);
             const uri = pathToFileURL(getFileName(filePath)).href;
-            const doc = docManager.getEmbeddedDocument(
-                uri,
-                'javascript'
-            );
+            const doc = docManager.getByURI(uri);
             console.log("file exist", doc != null);
             return doc != null;
         },
