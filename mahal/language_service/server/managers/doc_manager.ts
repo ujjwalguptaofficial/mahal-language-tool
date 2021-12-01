@@ -112,7 +112,7 @@ export class DocManager {
         if (region) {
             return region.languageId;
         }
-        console.log("regions", regions);
+        // console.log("regions", regions);
         return 'unknown';
     }
 }

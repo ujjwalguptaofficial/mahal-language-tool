@@ -44,14 +44,14 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
     ).map(item => {
         return pathToFileURL(item + ".ts").href;
     })
-    fileNames.push(
-        getDefaultLibFilePath(tsConfig)
-    )
+    // fileNames.push(
+    //     getDefaultLibFilePath(tsConfig)
+    // )
     console.log("dir", fileNames);
     const getFileName = (fileName: string) => {
         return fileName.substr(0, fileName.length - 3)
     }
-    let version = 0;
+
     // activeWorkSpace.uri
     const host: LanguageServiceHost = {
         getCompilationSettings() {
@@ -62,8 +62,8 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
         },
         getDefaultLibFileName(options) {
             const libPath = getDefaultLibFilePath(options);
-            console.log("libPath", libPath);
-            console.log("options", options);
+            // console.log("libPath", libPath);
+            // console.log("options", options);
             return libPath;
         },
         getScriptFileNames() {
@@ -74,14 +74,14 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
             return fileNames;
         },
         getScriptSnapshot(filePath) {
-            console.log("filePath", filePath)
+            // console.log("filePath", filePath)
             let fileText;
             if (filePath.includes('node_modules')) {
                 fileText = sys.readFile(filePath)
             }
             else {
                 const uri = getFileName(filePath);
-                console.log("uri", uri);
+                // console.log("uri", uri);
                 const doc = docManager.getEmbeddedDocument(
                     uri,
                     'javascript'
@@ -93,17 +93,22 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
             // console.log("fileText", fileText.length, `'${fileText}'`);
             return ScriptSnapshot.fromString(fileText);
         },
-        getScriptVersion(fileName) {
-            if (fileName.includes('node_modules')) {
+        getScriptVersion(filePath) {
+            if (filePath.includes('node_modules')) {
                 return '0';
             }
-            return (version++).toString();
+            const uri = getFileName(filePath);
+            // console.log("getScriptVersion uri", uri);
+            const doc = docManager.getByURI(uri);
+            // console.log("getScriptVersion", filePath, doc);
+            const version = doc ? doc.version : 0;
+            return version.toString();
         },
         fileExists(filePath) {
-            console.log("file exist", filePath);
+            // console.log("file exist", filePath);
             const uri = pathToFileURL(getFileName(filePath)).href;
             const doc = docManager.getByURI(uri);
-            console.log("file exist", doc != null);
+            // console.log("file exist", doc != null);
             return doc != null;
         },
         directoryExists: sys.directoryExists,

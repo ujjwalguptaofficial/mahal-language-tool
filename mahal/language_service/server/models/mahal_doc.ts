@@ -1,7 +1,7 @@
 import { LanguageService } from "vscode-html-languageservice";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { TextDocumentContentChangeEvent, Range, Position } from "vscode-languageserver/node";
-import { getRangeFromXmlNode ,getContentFromXmlNode} from "../helpers";
+import { getRangeFromXmlNode, getContentFromXmlNode } from "../helpers";
 import { EmbeddedRegion } from "../interfaces";
 import { getEmbeddedDocument } from "../utils";
 
@@ -11,6 +11,7 @@ export class MahalDoc {
     regions: EmbeddedRegion[];
 
     textDoc: TextDocument
+    version = 0;
 
     constructor(private languageService: LanguageService, document: TextDocument) {
         this.setTextDoc(
@@ -23,6 +24,7 @@ export class MahalDoc {
         this.regions = this.getDocumentRegions(
             this.languageService, document
         )
+        ++this.version;
     }
 
     getText(range?: Range): string {

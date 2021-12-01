@@ -31,7 +31,7 @@ export class JsLang extends MahalLang {
             )
         }
         const triggerCharValue = getTsTriggerCharacter(triggerChar);
-        console.log("offset", offset);
+        // console.log("offset", offset);
 
         const result = this.langService.getCompletionsAtPosition(
             uri + ".ts", offset,
@@ -49,7 +49,7 @@ export class JsLang extends MahalLang {
         )
 
         const entries = result ? result.entries : [];
-        console.log("entries", entries.length);
+        // console.log("entries", entries.length);
         const items = entries.map(entry => {
             const { detail, label } = getLabelAndDetailFromCompletionEntry(entry);
             const completionItem: CompletionItem = {
