@@ -61,10 +61,9 @@ connection.onHover((params) => {
 });
 
 
-// connection.onCompletionResolve((params) => {
-//     console.log("onCompletionResolve params", params);
-//     return null as any
-// });
+connection.onCompletionResolve((params) => {
+    return langManager.doCompletionResolve(params);
+});
 
 
 connection.listen();

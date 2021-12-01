@@ -1,8 +1,8 @@
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
-import { CompletionEntry, CompletionsTriggerCharacter, createScanner, LanguageService, ScriptElementKind } from "typescript";
+import { CompletionEntry, CompletionsTriggerCharacter, createScanner, displayPartsToString, LanguageService, ScriptElementKind } from "typescript";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { CompletionItem, CompletionItemKind, Position } from "vscode-languageserver/node";
+import { CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, InsertTextFormat, Position } from "vscode-languageserver/node";
 
 export class JsLang extends MahalLang {
     readonly id = 'javascript';
@@ -15,17 +15,26 @@ export class JsLang extends MahalLang {
     }
 
     doComplete(document: TextDocument, position: Position) {
-        const offset = document.offsetAt(position);
-        const fileText = document.getText();
+        const uri = document.uri;
+        const savedDoc = this.getDoc(document);
+
+        const offset = savedDoc.offsetAt(position);
+        const fileText = savedDoc.getText();
+
+        console.log("saved fileText", fileText.split(""), fileText.length, `'${fileText}'`);
+
         const triggerChar = fileText[offset - 1];
         if (NON_SCRIPT_TRIGGERS.includes(triggerChar)) {
-            return { isIncomplete: false, items: [] };
+            console.log("returning empty");
+            return Promise.resolve(
+                CompletionList.create([], false)
+            )
         }
         const triggerCharValue = getTsTriggerCharacter(triggerChar);
         console.log("offset", offset);
 
         const result = this.langService.getCompletionsAtPosition(
-            document.uri + ".ts", offset,
+            uri + ".ts", offset,
             {
                 allowIncompleteCompletions: true,
                 allowTextChangesInNewFiles: true,
@@ -35,28 +44,60 @@ export class JsLang extends MahalLang {
                 includeCompletionsForImportStatements: true,
                 includeCompletionsForModuleExports: true,
                 includeCompletionsWithSnippetText: true,
-                includePackageJsonAutoImports: "auto",
-                
+                includePackageJsonAutoImports: "auto"
             }
         )
 
         const entries = result ? result.entries : [];
-        // console.log("result", result);
-        return entries.map(item => {
-            const { detail, label } = getLabelAndDetailFromCompletionEntry(item);
+        console.log("entries", entries.length);
+        const items = entries.map(entry => {
+            const { detail, label } = getLabelAndDetailFromCompletionEntry(entry);
             const completionItem: CompletionItem = {
 
                 label: label,
                 detail: detail,
-                sortText: item.sortText,
-                insertText: item.insertText,
-                preselect: item.isRecommended,
-                filterText: getFilterText(item.insertText),
-                kind: toCompletionItemKind(item.kind),
+                sortText: entry.sortText,
+                insertText: entry.insertText,
+                preselect: entry.isRecommended,
+                filterText: getFilterText(entry.insertText),
+                kind: toCompletionItemKind(entry.kind),
+                data: {
+                    uri: uri,
+                    offset,
+                    source: entry.source,
+                    tsData: entry.data,
+                    position: position
+                }
 
             };
+            if (entry.kindModifiers) {
+                const kindModifiers = parseKindModifier(
+                    entry.kindModifiers ?? ''
+                );
+                if (kindModifiers.optional) {
+                    if (!completionItem.insertText) {
+                        completionItem.insertText = completionItem.label;
+                    }
+                    if (!completionItem.filterText) {
+                        completionItem.filterText = completionItem.label;
+                    }
+                    completionItem.label += '?';
+                }
+                if (kindModifiers.deprecated) {
+                    completionItem.tags = [CompletionItemTag.Deprecated];
+                }
+                if (kindModifiers.color) {
+                    completionItem.kind = CompletionItemKind.Color;
+                }
+            }
+            // console.log("entry item", entry);
+            // console.log("completon item", completionItem);
             return completionItem;
-        }) as any
+        });
+        console.log("items", items.map(item => item.label));
+        return Promise.resolve(
+            CompletionList.create(items, false)
+        );
     }
 
     doHover(document: TextDocument, position: Position) {
@@ -71,6 +112,49 @@ export class JsLang extends MahalLang {
         // )
     }
 
+    doResolve(item: CompletionItem) {
+        console.log("item", item.data);
+        const details = this.langService.getCompletionEntryDetails(
+            item.data.uri + ".ts",
+            item.data.offset,
+            item.data.entryName, undefined,
+            item.data.source, undefined,
+            item.data.tsData
+        );
+        if (details) {
+            item.documentation = displayPartsToString(
+                details.documentation);
+            item.detail = displayPartsToString(details.displayParts);
+            if (
+                // this.supportsCompletionWithSnippets &&
+                (details.kind === 'method' || details.kind === 'function')
+            ) {
+                const parameters = details.displayParts
+                    .filter(p => p.kind === 'parameterName')
+                    // tslint:disable-next-line:no-invalid-template-strings
+                    .map((p, i) => '${' + `${i + 1}:${p.text}` + '}')
+                const paramString = parameters.join(', ')
+                item.insertText = details.name + `(${paramString})`
+                item.insertTextFormat = InsertTextFormat.Snippet
+            } else {
+                item.insertTextFormat = InsertTextFormat.PlainText
+                item.insertText = details.name
+            }
+            item.data = undefined
+        }
+        return item;
+    }
+
+}
+
+function parseKindModifier(kindModifiers: string) {
+    const kinds = new Set(kindModifiers.split(/,|\s+/g));
+
+    return {
+        optional: kinds.has('optional'),
+        deprecated: kinds.has('deprecated'),
+        color: kinds.has('color')
+    };
 }
 
 function getLabelAndDetailFromCompletionEntry(entry: CompletionEntry) {

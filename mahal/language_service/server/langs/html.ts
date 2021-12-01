@@ -55,4 +55,8 @@ export class HtmlLang extends MahalLang {
             this.langService.parseHTMLDocument(doc)
         )
     }
+
+    doResolve() {
+        return null
+    }
 }

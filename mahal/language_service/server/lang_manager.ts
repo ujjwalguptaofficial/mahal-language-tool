@@ -1,5 +1,5 @@
 import { getLanguageService } from 'vscode-html-languageservice';
-import { Connection, InitializeParams, Position, TextDocumentIdentifier } from 'vscode-languageserver/node';
+import { CompletionItem, Connection, InitializeParams, Position, TextDocumentIdentifier } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
 import { HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
@@ -88,7 +88,29 @@ export class LangManager {
         );
 
         const activeLang = this.langs[languageId];
-        return activeLang.doHover(document.textDoc, position);
+        if (activeLang) {
+            return activeLang.doHover(document.textDoc, position);
+        }
+    }
+
+    doCompletionResolve(item: CompletionItem) {
+        const uri = item.data.uri;
+        const document = this.docManager.getByURI(
+            uri
+        );
+        if (!document) {
+            throw new Error('The document should be opened for completion, file: ' + uri);
+        }
+
+        const languageId = this.docManager.getLanguageAtPosition(
+            document.textDoc,
+            item.data.position
+        );
+
+        const activeLang = this.langs[languageId];
+        if (activeLang) {
+            return activeLang.doResolve(item);
+        }
     }
 
 

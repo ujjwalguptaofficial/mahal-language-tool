@@ -1,7 +1,7 @@
 import { LanguageService } from "vscode-html-languageservice";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { TextDocumentContentChangeEvent, Range, Position } from "vscode-languageserver/node";
-import { getRangeFromXmlNode } from "../helpers";
+import { getRangeFromXmlNode ,getContentFromXmlNode} from "../helpers";
 import { EmbeddedRegion } from "../interfaces";
 import { getEmbeddedDocument } from "../utils";
 
@@ -94,7 +94,7 @@ export class MahalDoc {
         const scriptStart = result.start;
         const scriptEnd = result.end;
         if (scriptStart && scriptEnd) {
-            console.log("pushed script", result);
+            console.log("pushed script", result, getContentFromXmlNode(fullText,'script').length);
             regions.push({ languageId: 'javascript', start: scriptStart, end: scriptEnd });
         }
 

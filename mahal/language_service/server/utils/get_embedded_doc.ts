@@ -8,13 +8,13 @@ export function getEmbeddedDocument(document: TextDocument, regions: EmbeddedReg
     let lastSuffix = '';
     for (const region of regions) {
         if (region.languageId === languageId && (!ignoreAttributeValues || !region.attributeValue)) {
-            result = substituteWithWhitespace(result, currentPos, region.start, oldContent, lastSuffix, getPrefix(region));
+            // result = substituteWithWhitespace(result, currentPos, region.start, oldContent, lastSuffix, getPrefix(region));
             result += oldContent.substring(region.start, region.end);
             currentPos = region.end;
             lastSuffix = getSuffix(region);
         }
     }
-    result = substituteWithWhitespace(result, currentPos, oldContent.length, oldContent, lastSuffix, '');
+    // result = substituteWithWhitespace(result, currentPos, oldContent.length, oldContent, lastSuffix, '');
     return TextDocument.create(document.uri, languageId, document.version, result);
 }
 
