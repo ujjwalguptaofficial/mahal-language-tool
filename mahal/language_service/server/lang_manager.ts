@@ -1,9 +1,10 @@
 import { getLanguageService } from 'vscode-html-languageservice';
-import { CompletionItem, Connection, DocumentHighlightParams, DocumentSymbolParams, InitializeParams, Position, ReferenceParams, SignatureHelpParams, SymbolInformation, TextDocumentIdentifier } from 'vscode-languageserver/node';
+import { CompletionItem, Connection, DocumentHighlightParams, DocumentSymbolParams, InitializeParams, Position, ReferenceParams, SemanticTokensBuilder, SemanticTokensParams, SignatureHelpParams, SymbolInformation, TextDocumentIdentifier } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
+import { ISemanticTokenData } from './interfaces';
 import { HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
-import { getTypescriptService } from './services';
+import { getTypescriptService, RefTokensService } from './services';
 
 export class LangManager {
 
@@ -46,8 +47,9 @@ export class LangManager {
             htmlService, this.docManager
         );
         if (jsService) {
+            const refTokensService = new RefTokensService(connection)
             this.langs['javascript'] = new JsLang(
-                jsService, this.docManager
+                jsService, this.docManager, refTokensService
             );
         }
     }
@@ -174,6 +176,31 @@ export class LangManager {
         return symbols;
 
     }
+    onSemanticTokens(params: SemanticTokensParams) {
+        const uri = params.textDocument.uri;
+        const document = this.docManager.getByURI(
+            uri
+        );
+        if (!document) {
+            throw new Error('The document should be opened for completion, file: ' + uri);
+        }
+        let data: ISemanticTokenData[] = [];
+        for (const languageId in this.langs) {
+            const lang = this.langs[languageId];
+            data = data.concat(
+                lang.getSemanticTokens(document.textDoc)
+            )
+        }
+        const sorted = data.sort((a, b) => {
+            return a.line - b.line || a.character - b.character;
+        });
+        const builder = new SemanticTokensBuilder();
+        sorted.forEach(token =>
+            builder.push(token.line, token.character, token.length, token.classificationType, token.modifierSet)
+        );
+        return builder.build();
+
+    }
     getDocumentHighlight(params: DocumentHighlightParams) {
         const uri = params.textDocument.uri;
         const document = this.docManager.getByURI(
@@ -195,5 +222,7 @@ export class LangManager {
             );
         }
     }
+
+
 
 }

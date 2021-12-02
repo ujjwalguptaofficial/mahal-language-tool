@@ -1,10 +1,50 @@
-import { createConnection, ProposedFeatures, TextDocumentSyncKind } from "vscode-languageserver/node";
+import { createConnection, ProposedFeatures, SemanticTokenModifiers, SemanticTokensLegend, SemanticTokenTypes, TextDocumentSyncKind } from "vscode-languageserver/node";
+import { TokenModifier, TokenType } from "./constants";
 import { LangManager } from "./lang_manager";
 
 
 
 let connection = createConnection(ProposedFeatures.all);
 let langManager = new LangManager();
+export function getSemanticTokenLegends(): SemanticTokensLegend {
+    const tokenModifiers: string[] = [];
+
+    ([
+        [TokenModifier.declaration, SemanticTokenModifiers.declaration],
+        [TokenModifier.static, SemanticTokenModifiers.static],
+        [TokenModifier.async, SemanticTokenModifiers.async],
+        [TokenModifier.readonly, SemanticTokenModifiers.readonly],
+        [TokenModifier.defaultLibrary, SemanticTokenModifiers.defaultLibrary],
+        [TokenModifier.local, 'local'],
+
+        // vue
+        [TokenModifier.refValue, 'refValue']
+    ] as const).forEach(([tsModifier, legend]) => (tokenModifiers[tsModifier] = legend));
+
+    const tokenTypes: string[] = [];
+
+    ([
+        [TokenType.class, SemanticTokenTypes.class],
+        [TokenType.enum, SemanticTokenTypes.enum],
+        [TokenType.interface, SemanticTokenTypes.interface],
+        [TokenType.namespace, SemanticTokenTypes.namespace],
+        [TokenType.typeParameter, SemanticTokenTypes.typeParameter],
+        [TokenType.type, SemanticTokenTypes.type],
+        [TokenType.parameter, SemanticTokenTypes.parameter],
+        [TokenType.variable, SemanticTokenTypes.variable],
+        [TokenType.enumMember, SemanticTokenTypes.enumMember],
+        [TokenType.property, SemanticTokenTypes.property],
+        [TokenType.function, SemanticTokenTypes.function],
+
+        // member is renamed to method in vscode codebase to match LSP default
+        [TokenType.member, SemanticTokenTypes.method]
+    ] as const).forEach(([tokenType, legend]) => (tokenTypes[tokenType] = legend));
+
+    return {
+        tokenModifiers,
+        tokenTypes
+    };
+}
 
 connection.onInitialize((params) => {
     langManager.listen(connection, params);
@@ -16,6 +56,11 @@ connection.onInitialize((params) => {
             completionProvider: {
                 resolveProvider: false,
                 triggerCharacters: ['.', '"', '\'', '/', '@', '<']
+            },
+            semanticTokensProvider: {
+                range: true,
+                full: true,
+                legend: getSemanticTokenLegends()
             },
             // codeActionProvider: true,
             // definitionProvider: true,
@@ -77,6 +122,13 @@ connection.onDocumentSymbol((params) => {
 })
 connection.onDocumentHighlight((params) => {
     return langManager.getDocumentHighlight(params);
+})
+
+connection.languages.semanticTokens.on((params) => {
+    return langManager.onSemanticTokens(params);
+})
+connection.languages.semanticTokens.onRange((params) => {
+    return langManager.onSemanticTokens(params);
 })
 
 

@@ -1,6 +1,7 @@
-import { CompletionItem, Location, CompletionList, Hover, DocumentHighlight } from "vscode-languageserver-protocol/node";
+import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight } from "vscode-languageserver-protocol/node";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
+import { ISemanticTokenData } from "../interfaces";
 import { DocManager } from "../managers";
 
 export abstract class MahalLang {
@@ -28,6 +29,9 @@ export abstract class MahalLang {
         return [];
     }
     getDocumentHighlight(document: TextDocument, position: Position): DocumentHighlight[] {
+        return [];
+    }
+    getSemanticTokens(document: TextDocument, range?: Range): ISemanticTokenData[] {
         return [];
     }
 }

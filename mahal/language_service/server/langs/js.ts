@@ -1,17 +1,21 @@
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
-import { CompletionEntry, CompletionsTriggerCharacter, createScanner, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, TextSpan } from "typescript";
+import { CompletionEntry, Node, CompletionsTriggerCharacter, createScanner, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression } from "typescript";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight } from "vscode-languageserver/node";
 import * as Previewer from '../utils/previewer';
 import { toSymbolKind } from "../utils";
+import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../constants";
+import { ISemanticTokenOffsetData } from "../interfaces";
+import { RefTokensService } from "../services";
 
 export class JsLang extends MahalLang {
     readonly id = 'javascript';
 
     constructor(
         private langService: LanguageService,
-        docManager: DocManager
+        docManager: DocManager,
+        private refTokensService: RefTokensService
     ) {
         super(docManager);
     }
@@ -323,7 +327,150 @@ export class JsLang extends MahalLang {
             };
         });
     }
+
+    getSemanticTokens(document: TextDocument, range?: Range) {
+        const uri = document.uri;
+        const savedDoc = this.getDoc(document);
+        // const offset = savedDoc.offsetAt(range);
+        const scriptText = savedDoc.getText();
+        if (scriptText.trim().length > SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT) {
+            return [];
+        }
+        const fileFsPath = this.getFileName(uri);
+        const textSpan = range
+            ? toTextSpan(range, savedDoc)
+            : {
+                start: 0,
+                length: scriptText.length
+            };
+        const { spans } = this.langService.getEncodedSemanticClassifications(
+            fileFsPath,
+            textSpan,
+            SemanticClassificationFormat?.TwentyTwenty
+        );
+
+        const data: ISemanticTokenOffsetData[] = [];
+        let index = 0;
+
+        while (index < spans.length) {
+            // [start, length, encodedClassification, start2, length2, encodedClassification2]
+            const start = spans[index++];
+            const length = spans[index++];
+            const encodedClassification = spans[index++];
+            const classificationType = getTokenTypeFromClassification(encodedClassification);
+            if (classificationType < 0) {
+                continue;
+            }
+
+            const modifierSet = getTokenModifierFromClassification(encodedClassification);
+
+            data.push({
+                start,
+                length,
+                classificationType,
+                modifierSet
+            });
+        }
+
+        const program = this.langService.getProgram();
+        if (program) {
+            const refTokens = addCompositionApiRefTokens(program, fileFsPath, data, this.refTokensService);
+            this.refTokensService.send(
+                uri,
+                refTokens.map(t => Range.create(savedDoc.positionAt(t[0]), savedDoc.positionAt(t[1])))
+            );
+        }
+
+        return data.map(({ start, ...rest }) => {
+            const startPosition = savedDoc.positionAt(start);
+
+            return {
+                ...rest,
+                line: startPosition.line,
+                character: startPosition.character
+            };
+        });
+    }
 }
+
+function walk(node: Node, callback: (node: Node) => void) {
+    node.forEachChild(child => {
+        callback(child);
+        walk(child, callback);
+    });
+}
+
+export function addCompositionApiRefTokens(
+    program: Program,
+    fileFsPath: string,
+    exists: ISemanticTokenOffsetData[],
+    refTokensService: RefTokensService
+): [number, number][] {
+    const sourceFile = program.getSourceFile(fileFsPath);
+
+    if (!sourceFile) {
+        return [];
+    }
+
+    const typeChecker = program.getTypeChecker();
+
+    const tokens: [number, number][] = [];
+    walk(sourceFile, node => {
+        if (!isIdentifier(node) || node.text !== 'value' || !isPropertyAccessExpression(node.parent)) {
+            return;
+        }
+        const propertyAccess = node.parent;
+
+        let parentSymbol = typeChecker.getTypeAtLocation(propertyAccess.expression).symbol;
+
+        if (parentSymbol.flags & SymbolFlags.Alias) {
+            parentSymbol = typeChecker.getAliasedSymbol(parentSymbol);
+        }
+
+        if (parentSymbol.name !== 'Ref') {
+            return;
+        }
+
+        const start = node.getStart();
+        const length = node.getWidth();
+        tokens.push([start, start + length]);
+        const exist = exists.find(token => token.start === start && token.length === length);
+        const encodedModifier = 1 << TokenModifier.refValue;
+
+        if (exist) {
+            exist.modifierSet |= encodedModifier;
+        } else {
+            exists.push({
+                classificationType: TokenType.property,
+                length: node.getEnd() - node.getStart(),
+                modifierSet: encodedModifier,
+                start: node.getStart()
+            });
+        }
+    });
+
+    return tokens;
+}
+
+export function getTokenModifierFromClassification(tsClassification: number) {
+    return tsClassification & TokenEncodingConsts.modifierMask;
+}
+
+export function getTokenTypeFromClassification(tsClassification: number): number {
+    return (tsClassification >> TokenEncodingConsts.typeOffset) - 1;
+}
+
+
+function toTextSpan(range: Range, doc: TextDocument): TextSpan {
+    const start = doc.offsetAt(range.start);
+    const end = doc.offsetAt(range.end);
+
+    return {
+        start,
+        length: end - start
+    };
+}
+
 
 function getSourceDoc(fileName: string, program: Program): TextDocument {
     const sourceFile = program.getSourceFile(fileName)!;
