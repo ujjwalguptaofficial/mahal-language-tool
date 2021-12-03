@@ -1,6 +1,8 @@
+import { EventEmitter } from "stream";
 import { LanguageService } from "vscode-html-languageservice";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, Position, TextDocumentContentChangeEvent } from "vscode-languageserver/node";
+import { DOC_EVENT } from "../enums";
 import { MahalDoc } from "../models";
 import { getEmbeddedDocument } from "../utils";
 
@@ -8,10 +10,20 @@ export class DocManager {
 
     docs = new Map<string, MahalDoc>();
 
+    private eventBus_ = new EventEmitter();
+
     private languageService: LanguageService
 
     constructor(languageService: LanguageService) {
         this.languageService = languageService;
+    }
+
+    on(event: DOC_EVENT, cb: Function) {
+        this.eventBus_.on(event, cb as any);
+    }
+
+    emit(event: DOC_EVENT, ...args) {
+        this.eventBus_.emit(event, ...args);
     }
 
     getByURI(uri: string) {
@@ -31,6 +43,7 @@ export class DocManager {
 
     closeDocument(uri: string) {
         this.docs.delete(uri);
+        this.emit(DOC_EVENT.RemoveDocument, uri);
     }
 
     didSaveTextDocument(_params: DidSaveTextDocumentParams) {
@@ -45,6 +58,7 @@ export class DocManager {
                 textDocument.version, textDocument.text
             )
         );
+        this.eventBus_.emit(DOC_EVENT.AddDocument, textDocument.uri);
     }
 
     didChangeTextDocument(params: DidChangeTextDocumentParams) {

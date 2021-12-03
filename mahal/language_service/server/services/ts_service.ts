@@ -4,6 +4,7 @@ import { createLanguageService, LanguageServiceHost, findConfigFile, sys, Compil
 import { InitializeParams } from "vscode-languageserver-protocol";
 import { getContentFromXmlNode, getRangeFromXmlNode } from "../helpers";
 import { DocManager } from "../managers";
+import { DOC_EVENT } from "../enums";
 
 
 export function getTypescriptService(params: InitializeParams, docManager: DocManager) {
@@ -36,15 +37,29 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
     console.log('tsconfig', tsConfig);
 
 
-    const fileNames = sys.readDirectory(
-        workSpaceDir, ['mahal', 'mhl']
-    ).map(item => {
-        return pathToFileURL(item + ".ts").href;
-    })
+    // const fileNames = sys.readDirectory(
+    //     workSpaceDir, ['mahal', 'mhl']
+    // ).map(item => {
+    //     return pathToFileURL(item + ".ts").href;
+    // })
     // fileNames.push(
     //     getDefaultLibFilePath(tsConfig)
     // )
+    const fileNames = Array.from(docManager.docs.keys())
     console.log("dir", fileNames);
+    docManager.on(DOC_EVENT.AddDocument, (uri: string) => {
+        uri = uri + ".ts";
+        fileNames.push(uri);
+        console.log("fileNames", fileNames);
+    });
+    docManager.on(DOC_EVENT.RemoveDocument, (uri: string) => {
+        uri = uri + ".ts";
+        const index = fileNames.findIndex(file => file === uri);
+        if (index >= 0) {
+            fileNames.splice(index, 1);
+        }
+        console.log("fileNames", fileNames);
+    });
     const getFileName = (fileName: string) => {
         return fileName.substr(0, fileName.length - 3)
     }

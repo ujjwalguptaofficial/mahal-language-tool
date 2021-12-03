@@ -68,7 +68,7 @@ export class LangManager {
             position
         );
 
-        console.log("languageId", languageId);
+        // console.log("languageId", languageId);
         const activeLang = this.langs[languageId];
         if (activeLang) {
             return activeLang.doComplete(document.textDoc, position);
