@@ -11,7 +11,6 @@ export class MahalDoc {
     regions: EmbeddedRegion[];
 
     textDoc: TextDocument
-    version = 0;
 
     constructor(private languageService: LanguageService, document: TextDocument) {
         this.setTextDoc(
@@ -24,7 +23,10 @@ export class MahalDoc {
         this.regions = this.getDocumentRegions(
             this.languageService, document
         )
-        ++this.version;
+    }
+
+    get version() {
+        return this.textDoc.version;
     }
 
     getText(range?: Range): string {
@@ -182,5 +184,9 @@ export class MahalDoc {
         //     token = scanner.scan();
         // }
         return regions;
+    }
+
+    getRegionByLanguage(languageId: string) {
+        return this.regions.find(region => region.languageId === languageId);
     }
 }

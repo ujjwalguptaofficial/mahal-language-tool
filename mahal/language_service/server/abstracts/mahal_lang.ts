@@ -23,7 +23,9 @@ export abstract class MahalLang {
     abstract doComplete(document: TextDocument, position: Position): CompletionList | Promise<CompletionList>;
     abstract doHover(document: TextDocument, position: Position): Hover;
     abstract doResolve(item: CompletionItem): CompletionItem;
-    abstract getReferences(document: TextDocument, position: Position): Location[];
+    getReferences(document: TextDocument, position: Position): Location[] {
+        return [];
+    }
     abstract getSignatureHelp(document: TextDocument, position: Position): SignatureHelp;
     getDocumentSymbols(doc: TextDocument): SymbolInformation[] {
         return [];

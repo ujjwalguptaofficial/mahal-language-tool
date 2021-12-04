@@ -112,7 +112,12 @@ export class JsLang extends MahalLang {
     doHover(document: TextDocument, position: Position) {
         const uri = document.uri;
         const savedDoc = this.getDoc(document);
-        const offset = savedDoc.offsetAt(position);
+        const region = this.docManager.getByURI(
+            uri
+        ).getRegionByLanguage(this.id);
+        const offset = document.offsetAt(position) - region.start;
+        console.log("hover offset", offset, offset - region.start);
+        console.log("saved offset", savedDoc.offsetAt(position));
         const info = this.langService.getQuickInfoAtPosition(
             this.getFileName(uri), offset
         )
@@ -145,9 +150,10 @@ export class JsLang extends MahalLang {
                     value: displayPartsToString(info.displayParts)
                 } as MarkupContent;
             }
+
             return {
                 contents: markedContents,
-                range: convertRange(savedDoc, info.textSpan),
+                range: convertRange(savedDoc, info.textSpan, region.start),
             } as Hover;
         }
         return null;
@@ -201,12 +207,16 @@ export class JsLang extends MahalLang {
         if (!program) {
             return [];
         }
+        const region = this.docManager.getByURI(
+            uri
+        ).getRegionByLanguage(this.id);
+
         references.forEach(r => {
             const referenceTargetDoc = getSourceDoc(r.fileName, program);
             if (referenceTargetDoc) {
                 referenceResults.push({
                     uri: uri,
-                    range: convertRange(referenceTargetDoc, r.textSpan)
+                    range: convertRange(referenceTargetDoc, r.textSpan, region.start)
                 });
             }
         });
@@ -279,6 +289,9 @@ export class JsLang extends MahalLang {
         if (!items) {
             return [];
         }
+        const region = this.docManager.getByURI(
+            uri
+        ).getRegionByLanguage(this.id);
         const result: SymbolInformation[] = [];
         const existing: { [k: string]: boolean } = {};
         const collectSymbols = (item: NavigationBarItem, containerLabel?: string) => {
@@ -289,7 +302,7 @@ export class JsLang extends MahalLang {
                     kind: toSymbolKind(item.kind),
                     location: {
                         uri: uri,
-                        range: convertRange(savedDoc, item.spans[0])
+                        range: convertRange(savedDoc, item.spans[0], region.start)
                     },
                     containerName: containerLabel
                 };
@@ -320,9 +333,12 @@ export class JsLang extends MahalLang {
         if (!occurrences) {
             return []
         }
+        const region = this.docManager.getByURI(
+            uri
+        ).getRegionByLanguage(this.id);
         return occurrences.map(entry => {
             return {
-                range: convertRange(savedDoc, entry.textSpan),
+                range: convertRange(savedDoc, entry.textSpan, region.start),
                 kind: entry.isWriteAccess ? DocumentHighlightKind.Write : DocumentHighlightKind.Text
             };
         });
@@ -477,9 +493,10 @@ function getSourceDoc(fileName: string, program: Program): TextDocument {
     return TextDocument.create(fileName, 'vue', 0, sourceFile.getFullText());
 }
 
-function convertRange(document: TextDocument, span: TextSpan): Range {
-    const startPosition = document.positionAt(span.start);
-    const endPosition = document.positionAt(span.start + span.length);
+function convertRange(document: TextDocument, span: TextSpan, relativeStart = 0): Range {
+    const start = span.start + relativeStart;
+    const startPosition = document.positionAt(start);
+    const endPosition = document.positionAt(start + span.length);
     return Range.create(startPosition, endPosition);
 }
 

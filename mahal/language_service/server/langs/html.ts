@@ -62,8 +62,4 @@ export class HtmlLang extends MahalLang {
     getSignatureHelp() {
         return null
     }
-
-    getReferences() {
-        return [];
-    }
 }

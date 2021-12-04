@@ -62,6 +62,7 @@ export class DocManager {
     }
 
     didChangeTextDocument(params: DidChangeTextDocumentParams) {
+
         const { textDocument } = params;
         const document = this.getByURI(
             textDocument.uri
@@ -129,4 +130,5 @@ export class DocManager {
         // console.log("regions", regions);
         return 'unknown';
     }
+  
 }
