@@ -22,10 +22,9 @@ export class JsLang extends MahalLang {
 
     doComplete(document: TextDocument, position: Position) {
         const uri = document.uri;
-        const { doc: savedDoc } = this.getDoc(document);
-        // const region = regions[0];
-
-        const offset = savedDoc.offsetAt(position);
+        const { doc: savedDoc, regions } = this.getDoc(document);
+        const region = regions[0];
+        const offset = document.offsetAt(position) - region.start;
         const fileText = savedDoc.getText();
 
         // console.log("saved fileText", fileText.split(""), fileText.length, `'${fileText}'`);
@@ -190,7 +189,7 @@ export class JsLang extends MahalLang {
     }
     getReferences(document: TextDocument, position: Position): Location[] {
         const uri = document.uri;
-        const { doc: savedDoc, regions } = this.getDoc(document);
+        const { regions } = this.getDoc(document);
         const region = regions[0];
         const offset = document.offsetAt(position) - region.start;
         const references = this.langService.getReferencesAtPosition(
@@ -219,7 +218,7 @@ export class JsLang extends MahalLang {
     }
     getSignatureHelp(document: TextDocument, position: Position): SignatureHelp | null {
         const uri = document.uri;
-        const { doc: savedDoc, regions } = this.getDoc(document);
+        const { regions } = this.getDoc(document);
         const region = regions[0];
         const offset = document.offsetAt(position) - region.start
         const signatureHelpItems = this.langService.getSignatureHelpItems(
@@ -279,7 +278,7 @@ export class JsLang extends MahalLang {
         const uri = document.uri;
         const { doc: savedDoc, regions } = this.getDoc(document);
         const region = regions[0];
-        // const offset = savedDoc.offsetAt(position);
+
         const items = this.langService.getNavigationBarItems(
             this.getFileName(uri)
         );
@@ -338,27 +337,36 @@ export class JsLang extends MahalLang {
         });
     }
 
-    getSemanticTokens(document: TextDocument, range?: Range) {
+    getSemanticTokens(document: TextDocument) {
         const uri = document.uri;
         const { doc: savedDoc, regions } = this.getDoc(document);
-        // const region = regions[0];
-        // const offset = savedDoc.offsetAt(range);
+        const region = regions[0];
+        // const start = document.offsetAt(range.start) - region.start;
+        // const end = document.offsetAt(range.end) - region.start;
+        // const offset = document.offsetAt(range.start) - region.start;
+
         const scriptText = savedDoc.getText();
-        if (scriptText.trim().length > SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT) {
+        if (scriptText.length > SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT) {
             return [];
         }
         const fileFsPath = this.getFileName(uri);
-        const textSpan = range
-            ? toTextSpan(range, savedDoc)
-            : {
-                start: 0,
-                length: scriptText.length
-            };
+        // range
+        //     ? {
+        //         start: start,
+        //         length: end - start
+        //     } as TextSpan
+        //     : 
+        const textSpan = {
+            start: 0,
+            length: scriptText.length
+        };
         const { spans } = this.langService.getEncodedSemanticClassifications(
             fileFsPath,
             textSpan,
-            SemanticClassificationFormat?.TwentyTwenty
+            SemanticClassificationFormat.TwentyTwenty
         );
+
+        // console.log("spans", spans, spans.length);
 
         const data: ISemanticTokenOffsetData[] = [];
         let index = 0;
@@ -388,12 +396,15 @@ export class JsLang extends MahalLang {
             const refTokens = addCompositionApiRefTokens(program, fileFsPath, data, this.refTokensService);
             this.refTokensService.send(
                 uri,
-                refTokens.map(t => Range.create(savedDoc.positionAt(t[0]), savedDoc.positionAt(t[1])))
+                refTokens.map(t => Range.create(
+                    savedDoc.positionAt(t[0] + region.start),
+                    savedDoc.positionAt(t[1] + region.start))
+                )
             );
         }
 
         return data.map(({ start, ...rest }) => {
-            const startPosition = savedDoc.positionAt(start);
+            const startPosition = document.positionAt(start + region.start);
 
             return {
                 ...rest,
