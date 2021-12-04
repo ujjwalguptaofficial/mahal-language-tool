@@ -95,7 +95,7 @@ export class DocManager {
         }
     }
 
-    getEmbeddedDocument(uri: string, languageId: string, ignoreAttributeValues?: boolean): TextDocument {
+    getEmbeddedDocument(uri: string, languageId: string, ignoreAttributeValues?: boolean) {
         const doc = this.getByURI(uri);
         if (doc) {
             const region = this.getByURI(uri).regions
@@ -108,10 +108,13 @@ export class DocManager {
             )
         }
 
-        return TextDocument.create(
-            uri,
-            languageId, 0, ''
-        )
+        return {
+            doc: TextDocument.create(
+                uri,
+                languageId, 0, ''
+            ),
+            regions: []
+        }
     }
 
     getLanguageAtPosition(document: TextDocument, position: Position) {
@@ -130,5 +133,5 @@ export class DocManager {
         // console.log("regions", regions);
         return 'unknown';
     }
-  
+
 }

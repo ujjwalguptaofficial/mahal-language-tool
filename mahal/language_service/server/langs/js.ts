@@ -22,7 +22,8 @@ export class JsLang extends MahalLang {
 
     doComplete(document: TextDocument, position: Position) {
         const uri = document.uri;
-        const savedDoc = this.getDoc(document);
+        const { doc: savedDoc } = this.getDoc(document);
+        // const region = regions[0];
 
         const offset = savedDoc.offsetAt(position);
         const fileText = savedDoc.getText();
@@ -111,13 +112,9 @@ export class JsLang extends MahalLang {
 
     doHover(document: TextDocument, position: Position) {
         const uri = document.uri;
-        const savedDoc = this.getDoc(document);
-        const region = this.docManager.getByURI(
-            uri
-        ).getRegionByLanguage(this.id);
+        const { doc: savedDoc, regions } = this.getDoc(document);
+        const region = regions[0];
         const offset = document.offsetAt(position) - region.start;
-        console.log("hover offset", offset, offset - region.start);
-        console.log("saved offset", savedDoc.offsetAt(position));
         const info = this.langService.getQuickInfoAtPosition(
             this.getFileName(uri), offset
         )
@@ -193,8 +190,9 @@ export class JsLang extends MahalLang {
     }
     getReferences(document: TextDocument, position: Position): Location[] {
         const uri = document.uri;
-        const savedDoc = this.getDoc(document);
-        const offset = savedDoc.offsetAt(position);
+        const { doc: savedDoc, regions } = this.getDoc(document);
+        const region = regions[0];
+        const offset = document.offsetAt(position) - region.start;
         const references = this.langService.getReferencesAtPosition(
             this.getFileName(uri),
             offset
@@ -207,9 +205,6 @@ export class JsLang extends MahalLang {
         if (!program) {
             return [];
         }
-        const region = this.docManager.getByURI(
-            uri
-        ).getRegionByLanguage(this.id);
 
         references.forEach(r => {
             const referenceTargetDoc = getSourceDoc(r.fileName, program);
@@ -224,8 +219,9 @@ export class JsLang extends MahalLang {
     }
     getSignatureHelp(document: TextDocument, position: Position): SignatureHelp | null {
         const uri = document.uri;
-        const savedDoc = this.getDoc(document);
-        const offset = savedDoc.offsetAt(position);
+        const { doc: savedDoc, regions } = this.getDoc(document);
+        const region = regions[0];
+        const offset = document.offsetAt(position) - region.start
         const signatureHelpItems = this.langService.getSignatureHelpItems(
             this.getFileName(uri), offset, {}
         );
@@ -281,7 +277,8 @@ export class JsLang extends MahalLang {
     }
     getDocumentSymbols(document: TextDocument) {
         const uri = document.uri;
-        const savedDoc = this.getDoc(document);
+        const { doc: savedDoc, regions } = this.getDoc(document);
+        const region = regions[0];
         // const offset = savedDoc.offsetAt(position);
         const items = this.langService.getNavigationBarItems(
             this.getFileName(uri)
@@ -289,9 +286,7 @@ export class JsLang extends MahalLang {
         if (!items) {
             return [];
         }
-        const region = this.docManager.getByURI(
-            uri
-        ).getRegionByLanguage(this.id);
+
         const result: SymbolInformation[] = [];
         const existing: { [k: string]: boolean } = {};
         const collectSymbols = (item: NavigationBarItem, containerLabel?: string) => {
@@ -324,8 +319,9 @@ export class JsLang extends MahalLang {
     getDocumentHighlight(document: TextDocument, position: Position): DocumentHighlight[] {
 
         const uri = document.uri;
-        const savedDoc = this.getDoc(document);
-        const offset = savedDoc.offsetAt(position);
+        const { doc: savedDoc, regions } = this.getDoc(document);
+        const region = regions[0];
+        const offset = document.offsetAt(position) - region.start;
 
         const occurrences = this.langService.getReferencesAtPosition(
             this.getFileName(uri), offset
@@ -333,9 +329,7 @@ export class JsLang extends MahalLang {
         if (!occurrences) {
             return []
         }
-        const region = this.docManager.getByURI(
-            uri
-        ).getRegionByLanguage(this.id);
+
         return occurrences.map(entry => {
             return {
                 range: convertRange(savedDoc, entry.textSpan, region.start),
@@ -346,7 +340,8 @@ export class JsLang extends MahalLang {
 
     getSemanticTokens(document: TextDocument, range?: Range) {
         const uri = document.uri;
-        const savedDoc = this.getDoc(document);
+        const { doc: savedDoc, regions } = this.getDoc(document);
+        // const region = regions[0];
         // const offset = savedDoc.offsetAt(range);
         const scriptText = savedDoc.getText();
         if (scriptText.trim().length > SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT) {

@@ -186,7 +186,7 @@ export class MahalDoc {
         return regions;
     }
 
-    getRegionByLanguage(languageId: string) {
-        return this.regions.find(region => region.languageId === languageId);
-    }
+    // getRegionByLanguage(languageId: string) {
+    //     return this.regions.find(region => region.languageId === languageId);
+    // }
 }

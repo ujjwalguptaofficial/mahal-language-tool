@@ -16,7 +16,7 @@ export class HtmlLang extends MahalLang {
     }
 
     doComplete(document: TextDocument, position: Position) {
-        const doc = this.getDoc(document);
+        const { doc } = this.getDoc(document);
 
         return this.langService.doComplete2(
             doc,
@@ -47,7 +47,7 @@ export class HtmlLang extends MahalLang {
 
     doHover(document: TextDocument, position: Position) {
 
-        const doc = this.getDoc(document);
+        const { doc } = this.getDoc(document);
 
         return this.langService.doHover(
             doc,

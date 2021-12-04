@@ -94,7 +94,7 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
             else {
                 const uri = getFileName(filePath);
                 // console.log("uri", uri);
-                const doc = docManager.getEmbeddedDocument(
+                const { doc } = docManager.getEmbeddedDocument(
                     uri,
                     'javascript'
                 );
@@ -127,7 +127,7 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
         readFile(filePath, encoding) {
 
             const uri = getFileName(filePath);
-            const doc = docManager.getEmbeddedDocument(
+            const { doc } = docManager.getEmbeddedDocument(
                 uri,
                 'javascript'
             );
