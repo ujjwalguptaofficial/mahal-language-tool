@@ -50,7 +50,7 @@ export class JsLang extends MahalLang {
                 includeCompletionsForImportStatements: true,
                 includeCompletionsForModuleExports: true,
                 includeCompletionsWithSnippetText: true,
-                includePackageJsonAutoImports: "auto"
+                includePackageJsonAutoImports: "auto",
             }
         )
 
@@ -101,7 +101,7 @@ export class JsLang extends MahalLang {
             return completionItem;
         });
         // console.log("items", items.map(item => item.label));
-        return CompletionList.create(items, false)
+        return CompletionList.create(items, items.length <= 0);
 
     }
 
@@ -149,21 +149,24 @@ export class JsLang extends MahalLang {
 
             return {
                 contents: markedContents,
-                range: convertRange(savedDoc, info.textSpan, region.start),
+                range: convertRange(
+                    document, info.textSpan, region.start
+                ),
             } as Hover;
         }
         return null;
     }
 
     doResolve(item: CompletionItem) {
-        console.log("item", item.data);
+        const uri = item.data.uri;
         const details = this.langService.getCompletionEntryDetails(
-            item.data.uri + ".ts",
+            this.getFileName(uri),
             item.data.offset,
             item.data.entryName, undefined,
             item.data.source, undefined,
             item.data.tsData
         );
+        console.log("doResolve", details);
         if (details) {
             item.documentation = displayPartsToString(
                 details.documentation);
@@ -210,7 +213,10 @@ export class JsLang extends MahalLang {
             if (referenceTargetDoc) {
                 referenceResults.push({
                     uri: uri,
-                    range: convertRange(referenceTargetDoc, r.textSpan, region.start)
+                    range: convertRange(
+                        document, r.textSpan,
+                        region.start
+                    )
                 });
             }
         });
@@ -282,6 +288,10 @@ export class JsLang extends MahalLang {
         const items = this.langService.getNavigationBarItems(
             this.getFileName(uri)
         );
+
+        console.log("getDocumentSymbols region", region);
+
+        // console.log("getDocumentSymbols items", items);
         if (!items) {
             return [];
         }
@@ -289,6 +299,7 @@ export class JsLang extends MahalLang {
         const result: SymbolInformation[] = [];
         const existing: { [k: string]: boolean } = {};
         const collectSymbols = (item: NavigationBarItem, containerLabel?: string) => {
+            // console.log("collectSymbols items", item);
             const sig = item.text + item.kind + item.spans[0].start;
             if (item.kind !== 'script' && !existing[sig]) {
                 const symbol: SymbolInformation = {
@@ -296,7 +307,11 @@ export class JsLang extends MahalLang {
                     kind: toSymbolKind(item.kind),
                     location: {
                         uri: uri,
-                        range: convertRange(savedDoc, item.spans[0], region.start)
+                        range: convertRange(
+                            document,
+                            item.spans[0],
+                            region.start
+                        )
                     },
                     containerName: containerLabel
                 };
@@ -313,6 +328,7 @@ export class JsLang extends MahalLang {
         };
 
         items.forEach(item => collectSymbols(item));
+        // console.log("result", result);
         return result;
     }
     getDocumentHighlight(document: TextDocument, position: Position): DocumentHighlight[] {
@@ -329,12 +345,16 @@ export class JsLang extends MahalLang {
             return []
         }
 
-        return occurrences.map(entry => {
+        const occurrencess = occurrences.map(entry => {
             return {
-                range: convertRange(savedDoc, entry.textSpan, region.start),
+                range: convertRange(
+                    document, entry.textSpan, region.start
+                ),
                 kind: entry.isWriteAccess ? DocumentHighlightKind.Write : DocumentHighlightKind.Text
             };
         });
+
+        console.log("occurrencess", occurrencess);
     }
 
     getSemanticTokens(document: TextDocument) {

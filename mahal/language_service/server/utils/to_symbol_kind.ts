@@ -18,12 +18,17 @@ export function toSymbolKind(kind: ScriptElementKind): SymbolKind {
             return SymbolKind.Class;
         case 'interface':
             return SymbolKind.Interface;
+        case 'function':
+        case 'local function':
         case 'method':
             return SymbolKind.Method;
+        case 'constructor':
+            return SymbolKind.Constructor;
         case 'property':
         case 'getter':
         case 'setter':
             return SymbolKind.Property;
     }
+    // console.log("no match", kind);
     return SymbolKind.Variable;
 }
