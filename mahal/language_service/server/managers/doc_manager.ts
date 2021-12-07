@@ -30,6 +30,10 @@ export class DocManager {
         return this.docs.get(uri);
     }
 
+    isDocExist(uri: string) {
+        return this.getByURI(uri) != null;
+    }
+
     save(document: TextDocument) {
         this.docs.set(
             document.uri,

@@ -1,10 +1,8 @@
-import { readFileSync, } from "fs";
-import { fileURLToPath, pathToFileURL } from "url";
-import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode } from "typescript";
+import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode, resolveModuleName, Extension, ModuleResolutionHost, ModuleResolutionKind } from "typescript";
 import { InitializeParams } from "vscode-languageserver-protocol";
-import { getContentFromXmlNode, getRangeFromXmlNode } from "../helpers";
 import { DocManager } from "../managers";
 import { DOC_EVENT } from "../enums";
+import { getCompilationSetting, getFilePathFromURL } from "../utils";
 
 
 export function getTypescriptService(params: InitializeParams, docManager: DocManager) {
@@ -16,22 +14,23 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
 
     const activeWorkSpace = workspace[0];
 
-    const workSpaceDir = fileURLToPath(activeWorkSpace.uri);
+    const workSpaceDir = getFilePathFromURL(activeWorkSpace.uri);
 
     console.log('workSpaceDir', workSpaceDir);
 
     const tsConfigPath = findConfigFile(process.cwd(), sys.fileExists, 'tsconfig.json') ||
         findConfigFile(workSpaceDir, sys.fileExists, 'jsconfig.json');
-    let tsConfig;
+    let tsConfigCompilerOptions = {};
     if (tsConfigPath) {
-        tsConfig = sys.readFile(tsConfigPath);
-    }
-    else {
-        tsConfig = {
-            allowJs: true,
-            declaration: false
-        } as CompilerOptions
-    }
+        const tsConfigContent = sys.readFile(tsConfigPath);
+        try {
+            tsConfigCompilerOptions = JSON.parse(tsConfigContent).compilerOptions;
+        } catch (error) {
+
+        }
+    };
+
+    let tsConfig: CompilerOptions = getCompilationSetting(tsConfigCompilerOptions);
 
     console.log('path', tsConfigPath);
     console.log('tsconfig', tsConfig);
@@ -61,13 +60,16 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
         console.log("fileNames", fileNames);
     });
     const getFileName = (fileName: string) => {
-        return fileName.substr(0, fileName.length - 3)
+        if (fileName.includes('.mahal')) {
+            return fileName.substr(0, fileName.length - 3)
+        }
+        return fileName;
     }
 
     // activeWorkSpace.uri
     const host: LanguageServiceHost = {
         getCompilationSettings() {
-            return tsConfig
+            return tsConfig;
         },
         getCurrentDirectory() {
             return workSpaceDir
@@ -86,23 +88,29 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
             return fileNames;
         },
         getScriptSnapshot(filePath) {
-            // console.log("filePath", filePath)
+            // console.log("getScriptSnapshot filePath", filePath)
+
             let fileText;
             if (filePath.includes('node_modules')) {
-                fileText = sys.readFile(filePath)
+                fileText = sys.readFile(getFilePathFromURL(filePath)) || '';
             }
             else {
                 const uri = getFileName(filePath);
-                // console.log("uri", uri);
-                const { doc } = docManager.getEmbeddedDocument(
-                    uri,
-                    'javascript'
-                );
-                fileText = doc ? doc.getText() : '';
+                if (docManager.isDocExist(uri)) {
+                    // console.log("uri", uri);
+                    const { doc } = docManager.getEmbeddedDocument(
+                        uri,
+                        'javascript'
+                    );
+                    fileText = doc ? doc.getText() : '';
+                }
+                else {
+                    fileText = host.readFile(filePath)
+                }
             }
 
             // console.log("scriptSnapShpt", uri, filePath, fileText, Array.from(docManager.docs.keys()));
-            // console.log("fileText", fileText.length, `'${fileText}'`);
+            // console.log("fileText", fileText.length);
             return ScriptSnapshot.fromString(fileText);
         },
         getScriptVersion(filePath) {
@@ -116,27 +124,58 @@ export function getTypescriptService(params: InitializeParams, docManager: DocMa
             const version = doc ? doc.version : 0;
             return version.toString();
         },
-        fileExists(filePath) {
-            // console.log("file exist", filePath);
-            const uri = pathToFileURL(getFileName(filePath)).href;
-            const doc = docManager.getByURI(uri);
-            // console.log("file exist", doc != null);
-            return doc != null;
+        fileExists(fileName) {
+            const value = sys.fileExists(getFilePathFromURL(fileName));
+            // console.log("fileExists", fileName, value);
+            return value;
         },
-        directoryExists: sys.directoryExists,
-        readFile(filePath, encoding) {
-
-            const uri = getFileName(filePath);
-            const { doc } = docManager.getEmbeddedDocument(
-                uri,
-                'javascript'
-            );
-            const fileText = doc ? doc.getText() : '';
-            console.log("readFile", filePath, "fileText", fileText);
-
-            return fileText;
+        directoryExists(directory) {
+            const value = sys.directoryExists(getFilePathFromURL(directory));
+            // console.log("directory", directory, value);
+            return value;
         },
-        useCaseSensitiveFileNames: () => true
+        readDirectory(filePath) {
+            const value = sys.readDirectory(getFilePathFromURL(filePath));
+            console.log("readDirectory", filePath, value);
+            return value;
+        },
+        readFile(filePath) {
+            const value = sys.readFile(getFilePathFromURL(filePath));
+            // console.log("readFile", filePath);
+            return value;
+        },
+        useCaseSensitiveFileNames: () => true,
+        getDirectories(filePath: string) {
+            const value = sys.getDirectories(getFilePathFromURL(filePath));
+            // console.log('getDirectories path', filePath);
+            return value;
+        },
+        resolveModuleNames(moduleNames: string[], containingFile: string) {
+
+            containingFile = getFileName(containingFile);
+            // console.log("moduleNames", moduleNames, "containingFile", containingFile);
+            // return [];
+            const moduleHost: ModuleResolutionHost = {
+                fileExists: host.fileExists,
+                directoryExists: host.directoryExists,
+                readFile: host.readFile,
+                getCurrentDirectory: host.getCurrentDirectory,
+                getDirectories: host.getDirectories,
+                useCaseSensitiveFileNames: true,
+            };
+            return moduleNames.map(moduleName => {
+                const item = resolveModuleName(
+                    moduleName,
+                    getFilePathFromURL(containingFile),
+                    tsConfig,
+                    moduleHost
+                );
+                // return null;
+                // console.log("item", item);
+                return item.resolvedModule;
+            })
+        },
+
     };
     const registry = createDocumentRegistry(
         true, workSpaceDir

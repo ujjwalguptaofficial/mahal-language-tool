@@ -159,6 +159,7 @@ export class JsLang extends MahalLang {
 
     doResolve(item: CompletionItem) {
         const uri = item.data.uri;
+        console.log("doResolve", uri);
         const details = this.langService.getCompletionEntryDetails(
             this.getFileName(uri),
             item.data.offset,
@@ -192,35 +193,41 @@ export class JsLang extends MahalLang {
     }
     getReferences(document: TextDocument, position: Position): Location[] {
         const uri = document.uri;
-        const { regions } = this.getDoc(document);
-        const region = regions[0];
-        const offset = document.offsetAt(position) - region.start;
-        const references = this.langService.getReferencesAtPosition(
-            this.getFileName(uri),
-            offset
-        );
-        if (!references) {
-            return [];
-        }
-        const referenceResults: Location[] = [];
-        const program = this.langService.getProgram();
-        if (!program) {
-            return [];
-        }
+        try {
 
-        references.forEach(r => {
-            const referenceTargetDoc = getSourceDoc(r.fileName, program);
-            if (referenceTargetDoc) {
-                referenceResults.push({
-                    uri: uri,
-                    range: convertRange(
-                        document, r.textSpan,
-                        region.start
-                    )
-                });
+
+            const { regions } = this.getDoc(document);
+            const region = regions[0];
+            const offset = document.offsetAt(position) - region.start;
+            const references = this.langService.getReferencesAtPosition(
+                this.getFileName(uri),
+                offset
+            );
+            if (!references) {
+                return [];
             }
-        });
-        return referenceResults;
+            const referenceResults: Location[] = [];
+            const program = this.langService.getProgram();
+            if (!program) {
+                return [];
+            }
+
+            references.forEach(r => {
+                const referenceTargetDoc = getSourceDoc(r.fileName, program);
+                if (referenceTargetDoc) {
+                    referenceResults.push({
+                        uri: uri,
+                        range: convertRange(
+                            document, r.textSpan,
+                            region.start
+                        )
+                    });
+                }
+            });
+            return referenceResults;
+        } catch (error) {
+            console.log("error in reference", error);
+        }
     }
     getSignatureHelp(document: TextDocument, position: Position): SignatureHelp | null {
         const uri = document.uri;
@@ -289,7 +296,7 @@ export class JsLang extends MahalLang {
             this.getFileName(uri)
         );
 
-        console.log("getDocumentSymbols region", region);
+        // console.log("getDocumentSymbols region", region);
 
         // console.log("getDocumentSymbols items", items);
         if (!items) {
@@ -354,7 +361,8 @@ export class JsLang extends MahalLang {
             };
         });
 
-        console.log("occurrencess", occurrencess);
+        // console.log("occurrencess", occurrencess);
+        return occurrencess;
     }
 
     getSemanticTokens(document: TextDocument) {
