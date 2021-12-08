@@ -4,7 +4,7 @@ import { MahalLang } from './abstracts';
 import { ISemanticTokenData } from './interfaces';
 import { HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
-import { getTypescriptService, RefTokensService } from './services';
+import { TypeScriptService, RefTokensService } from './services';
 
 export class LangManager {
 
@@ -23,9 +23,9 @@ export class LangManager {
             htmlService
         );
 
-        const jsService = getTypescriptService(params,
+        const jsService = new TypeScriptService(params,
             docManager
-        );
+        ).getLangService();
 
 
         connection.onDidOpenTextDocument(
