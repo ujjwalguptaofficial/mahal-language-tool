@@ -1,6 +1,6 @@
 import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight } from "vscode-languageserver-protocol/node";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
-import { SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
+import { Definition, SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
 import { ISemanticTokenData } from "../interfaces";
 import { DocManager } from "../managers";
 
@@ -24,6 +24,9 @@ export abstract class MahalLang {
     abstract doHover(document: TextDocument, position: Position): Hover;
     abstract doResolve(item: CompletionItem): CompletionItem;
     getReferences(document: TextDocument, position: Position): Location[] {
+        return [];
+    }
+    getDefinition(document: TextDocument, position: Position): Definition {
         return [];
     }
     abstract getSignatureHelp(document: TextDocument, position: Position): SignatureHelp;

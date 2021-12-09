@@ -63,7 +63,7 @@ connection.onInitialize((params) => {
                 legend: getSemanticTokenLegends()
             },
             // codeActionProvider: true,
-            // definitionProvider: true,
+            definitionProvider: true,
             // documentFormattingProvider: true,
             // documentRangeFormattingProvider: true,
             documentHighlightProvider: true,
@@ -129,6 +129,9 @@ connection.languages.semanticTokens.on((params) => {
 })
 connection.languages.semanticTokens.onRange((params) => {
     return langManager.onSemanticTokens(params);
+})
+connection.onDefinition((params) => {
+    return langManager.getDefinition(params);
 })
 
 

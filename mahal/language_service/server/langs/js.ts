@@ -2,9 +2,9 @@ import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
 import { CompletionEntry, Node, CompletionsTriggerCharacter, createScanner, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression } from "typescript";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight } from "vscode-languageserver/node";
+import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition } from "vscode-languageserver/node";
 import * as Previewer from '../utils/previewer';
-import { toSymbolKind } from "../utils";
+import { getURLFromPath, toSymbolKind } from "../utils";
 import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../constants";
 import { ISemanticTokenOffsetData } from "../interfaces";
 import { RefTokensService } from "../services";
@@ -190,6 +190,9 @@ export class JsLang extends MahalLang {
             item.data = undefined
         }
         return item;
+    }
+    gotoReferences() {
+        // this.langService.
     }
     getReferences(document: TextDocument, position: Position): Location[] {
         const uri = document.uri;
@@ -441,6 +444,42 @@ export class JsLang extends MahalLang {
             };
         });
     }
+
+    getDefinition(document: TextDocument, position: Position): Definition {
+        const uri = document.uri;
+        const fileFsPath = this.getFileName(uri);
+        const { regions } = this.getDoc(document);
+        const region = regions[0];
+        const offset = document.offsetAt(position) - region.start;
+        const definitions = this.langService.getDefinitionAtPosition(
+            fileFsPath, offset
+        );
+        if (!definitions) {
+            return [];
+        }
+
+        const definitionResults: Definition = [];
+        const program = this.langService.getProgram();
+        if (!program) {
+            return [];
+        }
+        definitions.forEach(d => {
+            const definitionTargetDoc = getSourceDoc(
+                d.fileName,
+                program
+            );
+            console.log("d.fileName", definitionTargetDoc);
+            definitionResults.push({
+                uri: getURLFromPath(d.fileName),
+                range: convertRange(
+                    definitionTargetDoc, d.textSpan,
+
+                    //  region.start
+                )
+            });
+        });
+        return definitionResults;
+    }
 }
 
 function walk(node: Node, callback: (node: Node) => void) {
@@ -524,7 +563,7 @@ function toTextSpan(range: Range, doc: TextDocument): TextSpan {
 
 function getSourceDoc(fileName: string, program: Program): TextDocument {
     const sourceFile = program.getSourceFile(fileName)!;
-    return TextDocument.create(fileName, 'vue', 0, sourceFile.getFullText());
+    return TextDocument.create(fileName, 'mahal', 0, sourceFile.getFullText());
 }
 
 function convertRange(document: TextDocument, span: TextSpan, relativeStart = 0): Range {

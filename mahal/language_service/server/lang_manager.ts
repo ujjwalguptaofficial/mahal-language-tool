@@ -1,5 +1,5 @@
 import { getLanguageService } from 'vscode-html-languageservice';
-import { CompletionItem, Connection, DocumentHighlightParams, DocumentSymbolParams, InitializeParams, Position, ReferenceParams, SemanticTokensBuilder, SemanticTokensParams, SignatureHelpParams, SymbolInformation, TextDocumentIdentifier } from 'vscode-languageserver/node';
+import { CompletionItem, Connection, DefinitionParams, DocumentHighlightParams, DocumentSymbolParams, InitializeParams, Position, ReferenceParams, SemanticTokensBuilder, SemanticTokensParams, SignatureHelpParams, SymbolInformation, TextDocumentIdentifier } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
 import { ISemanticTokenData } from './interfaces';
 import { HtmlLang, JsLang } from './langs';
@@ -223,6 +223,27 @@ export class LangManager {
         }
     }
 
+    getDefinition(params:DefinitionParams) {
+        const uri = params.textDocument.uri;
+        const document = this.docManager.getByURI(
+            uri
+        );
+        if (!document) {
+            throw new Error('The document should be opened for completion, file: ' + uri);
+        }
 
+        const languageId = this.docManager.getLanguageAtPosition(
+            document.textDoc,
+            params.position
+        );
+
+        const activeLang = this.langs[languageId];
+        if (activeLang) {
+            return activeLang.getDefinition(
+                document.textDoc, params.position
+            );
+        }
+
+    }
 
 }
