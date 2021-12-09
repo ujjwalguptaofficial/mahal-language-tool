@@ -1,14 +1,15 @@
 import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode, resolveModuleName, Extension, ModuleResolutionHost, ModuleResolutionKind } from "typescript";
 import { InitializeParams } from "vscode-languageserver-protocol";
 import { DocManager } from "../managers";
-import { DOC_EVENT } from "../enums";
-import { getCompilationSetting, getFilePathFromURL } from "../utils";
+import { getCompilationSetting, getURLFromPath, getFilePathFromURL } from "../utils";
 
 export class TypeScriptService {
     workSpaceDir: string;
     tsConfig: CompilerOptions;
 
-    fileNames: string[];
+    get fileNames() {
+        return Array.from(this.docManager.docs.keys())
+    }
 
     host: LanguageServiceHost;
 
@@ -24,7 +25,7 @@ export class TypeScriptService {
         console.log('workSpaceDir', this.workSpaceDir);
 
         this.tsConfig = this.getCompilerOptions_();
-        this.registerFileEvents_();
+        // this.registerFileEvents_();
         this.host = this.createHost_();
     }
 
@@ -46,34 +47,33 @@ export class TypeScriptService {
         return tsConfig;
     }
 
-    private getFileName(fileName: string) {
-        if (fileName.includes('.mahal')) {
-            return fileName.substr(0, fileName.length - 3)
-        }
-        return fileName;
-    }
+    // private getFileName(fileName: string) {
+    //     if (fileName.includes('.mahal')) {
+    //         return fileName.substr(0, fileName.length - 3)
+    //     }
+    //     return fileName;
+    // }
 
-    private registerFileEvents_() {
-        const fileNames = Array.from(this.docManager.docs.keys())
-        console.log("dir", fileNames);
-        this.docManager.on(DOC_EVENT.AddDocument, (uri: string) => {
-            uri = uri + ".ts";
-            fileNames.push(uri);
-            console.log("fileNames", fileNames);
-        });
-        this.docManager.on(DOC_EVENT.RemoveDocument, (uri: string) => {
-            uri = uri + ".ts";
-            const index = fileNames.findIndex(file => file === uri);
-            if (index >= 0) {
-                fileNames.splice(index, 1);
-            }
-            console.log("fileNames", fileNames);
-        });
-        this.fileNames = fileNames;
-    }
+    // private registerFileEvents_() {
+    //     const fileNames = Array.from(this.docManager.docs.keys())
+    //     console.log("dir", fileNames);
+    //     this.docManager.on(DOC_EVENT.AddDocument, (uri: string) => {
+    //         // uri = uri + ".ts";
+    //         fileNames.push(uri);
+    //         console.log("fileNames", fileNames);
+    //     });
+    //     this.docManager.on(DOC_EVENT.RemoveDocument, (uri: string) => {
+    //         uri = uri + ".ts";
+    //         const index = fileNames.findIndex(file => file === uri);
+    //         if (index >= 0) {
+    //             fileNames.splice(index, 1);
+    //         }
+    //         console.log("fileNames", fileNames);
+    //     });
+    // }
 
     private createHost_() {
-        const getFileName = this.getFileName;
+        // const getFileName = this.getFileName;
         const docManager = this.docManager;
         const host: LanguageServiceHost = {
             getCompilationSettings: () => {
@@ -103,11 +103,11 @@ export class TypeScriptService {
                     fileText = sys.readFile(getFilePathFromURL(filePath)) || '';
                 }
                 else {
-                    const uri = getFileName(filePath);
-                    if (docManager.isDocExist(uri)) {
+                    // const uri = getFileName(filePath);
+                    if (docManager.isDocExist(filePath)) {
                         // console.log("uri", uri);
                         const { doc } = docManager.getEmbeddedDocument(
-                            uri,
+                            getURLFromPath(filePath),
                             'javascript'
                         );
                         fileText = doc ? doc.getText() : '';
@@ -125,9 +125,9 @@ export class TypeScriptService {
                 if (filePath.includes('node_modules')) {
                     return '0';
                 }
-                const uri = getFileName(filePath);
+                // const uri = getFileName(filePath);
                 // console.log("getScriptVersion uri", uri);
-                const doc = docManager.getByURI(uri);
+                const doc = docManager.getByPath(filePath);
                 // console.log("getScriptVersion", filePath, doc);
                 const version = doc ? doc.version : 0;
                 return version.toString();
@@ -160,7 +160,7 @@ export class TypeScriptService {
             },
             resolveModuleNames: (moduleNames: string[], containingFile: string) => {
 
-                containingFile = getFileName(containingFile);
+                // containingFile = getFileName(containingFile);
                 // console.log("moduleNames", moduleNames, "containingFile", containingFile);
                 // return [];
                 const moduleHost: ModuleResolutionHost = {

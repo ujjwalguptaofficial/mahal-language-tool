@@ -4,7 +4,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, Position, TextDocumentContentChangeEvent } from "vscode-languageserver/node";
 import { DOC_EVENT } from "../enums";
 import { MahalDoc } from "../models";
-import { getEmbeddedDocument } from "../utils";
+import { getEmbeddedDocument, getFilePathFromURL } from "../utils";
 
 export class DocManager {
 
@@ -26,17 +26,23 @@ export class DocManager {
         this.eventBus_.emit(event, ...args);
     }
 
-    getByURI(uri: string) {
+    getByPath(uri: string) {
         return this.docs.get(uri);
     }
 
+    getByURI(uri: string) {
+        return this.docs.get(
+            getFilePathFromURL(uri)
+        );
+    }
+
     isDocExist(uri: string) {
-        return this.getByURI(uri) != null;
+        return this.getByPath(uri) != null;
     }
 
     save(document: TextDocument) {
         this.docs.set(
-            document.uri,
+            getFilePathFromURL(document.uri),
             new MahalDoc(this.languageService, document)
         )
     }
@@ -102,7 +108,7 @@ export class DocManager {
     getEmbeddedDocument(uri: string, languageId: string, ignoreAttributeValues?: boolean) {
         const doc = this.getByURI(uri);
         if (doc) {
-            const region = this.getByURI(uri).regions
+            const region = doc.regions
 
             return getEmbeddedDocument(
                 doc.textDoc,
@@ -121,8 +127,8 @@ export class DocManager {
         }
     }
 
-    getLanguageAtPosition(document: TextDocument, position: Position) {
-        const regions = this.getByURI(document.uri).regions;
+    getLanguageAtPosition(document: MahalDoc, position: Position) {
+        const regions = document.regions;
         const offset = document.offsetAt(position);
 
         const region = regions.find(region => {

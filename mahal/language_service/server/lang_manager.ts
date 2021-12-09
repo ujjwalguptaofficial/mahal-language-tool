@@ -64,7 +64,7 @@ export class LangManager {
         }
 
         const languageId = this.docManager.getLanguageAtPosition(
-            document.textDoc,
+            document,
             position
         );
 
@@ -85,7 +85,7 @@ export class LangManager {
         }
 
         const languageId = this.docManager.getLanguageAtPosition(
-            document.textDoc,
+            document,
             position
         );
 
@@ -105,7 +105,7 @@ export class LangManager {
         }
 
         const languageId = this.docManager.getLanguageAtPosition(
-            document.textDoc,
+            document,
             item.data.position
         );
 
@@ -125,7 +125,7 @@ export class LangManager {
         }
 
         const languageId = this.docManager.getLanguageAtPosition(
-            document.textDoc,
+            document,
             params.position
         );
 
@@ -146,7 +146,7 @@ export class LangManager {
         }
 
         const languageId = this.docManager.getLanguageAtPosition(
-            document.textDoc,
+            document,
             params.position
         );
 
@@ -211,7 +211,7 @@ export class LangManager {
         }
 
         const languageId = this.docManager.getLanguageAtPosition(
-            document.textDoc,
+            document,
             params.position
         );
 
@@ -233,7 +233,7 @@ export class LangManager {
         }
 
         const languageId = this.docManager.getLanguageAtPosition(
-            document.textDoc,
+            document,
             params.position
         );
 

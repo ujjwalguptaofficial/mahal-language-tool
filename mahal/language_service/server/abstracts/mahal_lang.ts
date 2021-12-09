@@ -3,6 +3,7 @@ import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { Definition, SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
 import { ISemanticTokenData } from "../interfaces";
 import { DocManager } from "../managers";
+import { getFilePathFromURL } from "../utils";
 
 export abstract class MahalLang {
 
@@ -11,6 +12,12 @@ export abstract class MahalLang {
     ) {
 
     }
+    
+    protected getFileName(uri) {
+        return getFilePathFromURL(uri);
+        // + ".ts";
+    }
+
 
     protected getDoc(document: TextDocument) {
         return this.docManager.getEmbeddedDocument(

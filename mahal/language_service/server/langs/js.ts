@@ -4,7 +4,7 @@ import { CompletionEntry, Node, CompletionsTriggerCharacter, createScanner, disp
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition } from "vscode-languageserver/node";
 import * as Previewer from '../utils/previewer';
-import { getURLFromPath, toSymbolKind } from "../utils";
+import { getFilePathFromURL, getURLFromPath, toSymbolKind } from "../utils";
 import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../constants";
 import { ISemanticTokenOffsetData } from "../interfaces";
 import { RefTokensService } from "../services";
@@ -40,7 +40,7 @@ export class JsLang extends MahalLang {
         // console.log("offset", offset);
 
         const result = this.langService.getCompletionsAtPosition(
-            uri + ".ts", offset,
+            this.getFileName(uri), offset,
             {
                 allowIncompleteCompletions: true,
                 allowTextChangesInNewFiles: true,
@@ -105,10 +105,7 @@ export class JsLang extends MahalLang {
 
     }
 
-    getFileName(uri) {
-        return uri + ".ts";
-    }
-
+    
     doHover(document: TextDocument, position: Position) {
         const uri = document.uri;
         const { doc: savedDoc, regions } = this.getDoc(document);
@@ -191,9 +188,7 @@ export class JsLang extends MahalLang {
         }
         return item;
     }
-    gotoReferences() {
-        // this.langService.
-    }
+
     getReferences(document: TextDocument, position: Position): Location[] {
         const uri = document.uri;
         try {
