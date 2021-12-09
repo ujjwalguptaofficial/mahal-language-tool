@@ -3,6 +3,7 @@ import { CompletionList, LanguageService, TextDocument } from "vscode-html-langu
 import { Position } from "vscode-languageserver-textdocument";
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
+import { MahalDoc } from "../models";
 
 export class HtmlLang extends MahalLang {
 
@@ -15,9 +16,8 @@ export class HtmlLang extends MahalLang {
         super(docManager);
     }
 
-    doComplete(document: TextDocument, position: Position) {
-        const { doc } = this.getDoc(document);
-
+    doComplete(document: MahalDoc, position: Position) {
+        const doc = document.textDoc;
         return this.langService.doComplete2(
             doc,
             position,

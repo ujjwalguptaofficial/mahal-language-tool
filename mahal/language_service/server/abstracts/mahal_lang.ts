@@ -3,6 +3,7 @@ import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { Definition, SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
 import { ISemanticTokenData } from "../interfaces";
 import { DocManager } from "../managers";
+import { MahalDoc } from "../models";
 import { getFilePathFromURL } from "../utils";
 
 export abstract class MahalLang {
@@ -12,7 +13,7 @@ export abstract class MahalLang {
     ) {
 
     }
-    
+
     protected getFileName(uri) {
         return getFilePathFromURL(uri);
         // + ".ts";
@@ -27,7 +28,7 @@ export abstract class MahalLang {
     }
 
     abstract id: string;
-    abstract doComplete(document: TextDocument, position: Position): CompletionList | Promise<CompletionList>;
+    abstract doComplete(document: MahalDoc, position: Position): CompletionList | Promise<CompletionList>;
     abstract doHover(document: TextDocument, position: Position): Hover;
     abstract doResolve(item: CompletionItem): CompletionItem;
     getReferences(document: TextDocument, position: Position): Location[] {

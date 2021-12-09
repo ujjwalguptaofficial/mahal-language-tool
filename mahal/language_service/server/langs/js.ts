@@ -8,6 +8,7 @@ import { getFilePathFromURL, getURLFromPath, toSymbolKind } from "../utils";
 import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../constants";
 import { ISemanticTokenOffsetData } from "../interfaces";
 import { RefTokensService } from "../services";
+import { MahalDoc } from "../models";
 
 export class JsLang extends MahalLang {
     readonly id = 'javascript';
@@ -20,12 +21,12 @@ export class JsLang extends MahalLang {
         super(docManager);
     }
 
-    doComplete(document: TextDocument, position: Position) {
+    doComplete(document: MahalDoc, position: Position) {
         const uri = document.uri;
-        const { doc: savedDoc, regions } = this.getDoc(document);
-        const region = regions[0];
+        // const { doc: savedDoc, regions } = this.getDoc(document);
+        const region = document.regions[0]; //regions[0];
         const offset = document.offsetAt(position) - region.start;
-        const fileText = savedDoc.getText();
+        const fileText = document.getText();
 
         // console.log("saved fileText", fileText.split(""), fileText.length, `'${fileText}'`);
 
@@ -105,7 +106,7 @@ export class JsLang extends MahalLang {
 
     }
 
-    
+
     doHover(document: TextDocument, position: Position) {
         const uri = document.uri;
         const { doc: savedDoc, regions } = this.getDoc(document);
@@ -463,7 +464,6 @@ export class JsLang extends MahalLang {
                 d.fileName,
                 program
             );
-            console.log("d.fileName", definitionTargetDoc);
             definitionResults.push({
                 uri: getURLFromPath(d.fileName),
                 range: convertRange(

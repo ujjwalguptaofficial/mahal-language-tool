@@ -4,6 +4,7 @@ import { MahalLang } from './abstracts';
 import { ISemanticTokenData } from './interfaces';
 import { HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
+import { MahalDoc } from './models';
 import { TypeScriptService, RefTokensService } from './services';
 
 export class LangManager {
@@ -54,14 +55,20 @@ export class LangManager {
         }
     }
 
-    doComplete(docIdentifier: TextDocumentIdentifier, position: Position) {
-        const uri = docIdentifier.uri;
+    getByURI(uri: string) {
         const document = this.docManager.getByURI(
             uri
         );
         if (!document) {
             throw new Error('The document should be opened for completion, file: ' + uri);
         }
+        return document;
+    }
+
+    getActiveLang(uri: string, position: Position) {
+        const document = this.getByURI(
+            uri
+        );
 
         const languageId = this.docManager.getLanguageAtPosition(
             document,
@@ -70,66 +77,43 @@ export class LangManager {
 
         // console.log("languageId", languageId);
         const activeLang = this.langs[languageId];
+        return { activeLang, document };
+    }
+
+    doComplete(docIdentifier: TextDocumentIdentifier, position: Position) {
+        const { activeLang, document } = this.getActiveLang(
+            docIdentifier.uri, position
+        );
         if (activeLang) {
-            return activeLang.doComplete(document.textDoc, position);
+            return activeLang.doComplete(document, position);
         }
     }
 
     doHover(docIdentifier: TextDocumentIdentifier, position: Position) {
-        const uri = docIdentifier.uri;
-        const document = this.docManager.getByURI(
-            uri
-        );
-        if (!document) {
-            throw new Error('The document should be opened for completion, file: ' + uri);
-        }
-
-        const languageId = this.docManager.getLanguageAtPosition(
-            document,
-            position
+        const { activeLang, document } = this.getActiveLang(
+            docIdentifier.uri, position
         );
 
-        const activeLang = this.langs[languageId];
         if (activeLang) {
             return activeLang.doHover(document.textDoc, position);
         }
     }
 
     doCompletionResolve(item: CompletionItem) {
-        const uri = item.data.uri;
-        const document = this.docManager.getByURI(
-            uri
-        );
-        if (!document) {
-            throw new Error('The document should be opened for completion, file: ' + uri);
-        }
-
-        const languageId = this.docManager.getLanguageAtPosition(
-            document,
-            item.data.position
+        const { activeLang } = this.getActiveLang(
+            item.data.uri, item.data.position
         );
 
-        const activeLang = this.langs[languageId];
         if (activeLang) {
             return activeLang.doResolve(item);
         }
     }
 
     getReferences(params: ReferenceParams) {
-        const uri = params.textDocument.uri;
-        const document = this.docManager.getByURI(
-            uri
-        );
-        if (!document) {
-            throw new Error('The document should be opened for completion, file: ' + uri);
-        }
-
-        const languageId = this.docManager.getLanguageAtPosition(
-            document,
-            params.position
+        const { activeLang, document } = this.getActiveLang(
+            params.textDocument.uri, params.position
         );
 
-        const activeLang = this.langs[languageId];
         if (activeLang) {
             return activeLang.getReferences(
                 document.textDoc, params.position
@@ -137,59 +121,55 @@ export class LangManager {
         }
     }
     getSignatureHelp(params: SignatureHelpParams) {
-        const uri = params.textDocument.uri;
-        const document = this.docManager.getByURI(
-            uri
-        );
-        if (!document) {
-            throw new Error('The document should be opened for completion, file: ' + uri);
-        }
-
-        const languageId = this.docManager.getLanguageAtPosition(
-            document,
-            params.position
+        const { activeLang, document } = this.getActiveLang(
+            params.textDocument.uri, params.position
         );
 
-        const activeLang = this.langs[languageId];
         if (activeLang) {
             return activeLang.getSignatureHelp(
                 document.textDoc, params.position
             );
         }
     }
-    getDocumentSymbols(params: DocumentSymbolParams) {
-        const uri = params.textDocument.uri;
-        const document = this.docManager.getByURI(
-            uri
-        );
-        if (!document) {
-            throw new Error('The document should be opened for completion, file: ' + uri);
-        }
-        let symbols: SymbolInformation[] = [];
+
+    *eachLang(uri: string) {
+        const document = this.getByURI(uri);
+        yield document;
         for (const languageId in this.langs) {
             const lang = this.langs[languageId];
-            symbols = symbols.concat(
-                lang.getDocumentSymbols(document.textDoc)
-            )
+            yield lang;
         }
 
+    }
+
+    getDocumentSymbols(params: DocumentSymbolParams) {
+        const uri = params.textDocument.uri;
+        const langs = this.eachLang(uri);
+        const document = langs.next().value as MahalDoc;
+        var lang = langs.next()
+        let symbols: SymbolInformation[] = [];
+        while (!lang.done) {
+            symbols = symbols.concat(
+                (lang.value as MahalLang).
+                    getDocumentSymbols(document.textDoc)
+            )
+            lang = langs.next();
+        }
         return symbols;
 
     }
     onSemanticTokens(params: SemanticTokensParams) {
         const uri = params.textDocument.uri;
-        const document = this.docManager.getByURI(
-            uri
-        );
-        if (!document) {
-            throw new Error('The document should be opened for completion, file: ' + uri);
-        }
         let data: ISemanticTokenData[] = [];
-        for (const languageId in this.langs) {
-            const lang = this.langs[languageId];
+        const langs = this.eachLang(uri);
+        const document = langs.next().value as MahalDoc;
+        var lang = langs.next()
+        while (!lang.done) {
             data = data.concat(
-                lang.getSemanticTokens(document.textDoc)
+                (lang.value as MahalLang).
+                    getSemanticTokens(document.textDoc)
             )
+            lang = langs.next();
         }
         const sorted = data.sort((a, b) => {
             return a.line - b.line || a.character - b.character;
@@ -202,20 +182,9 @@ export class LangManager {
 
     }
     getDocumentHighlight(params: DocumentHighlightParams) {
-        const uri = params.textDocument.uri;
-        const document = this.docManager.getByURI(
-            uri
+        const { activeLang, document } = this.getActiveLang(
+            params.textDocument.uri, params.position
         );
-        if (!document) {
-            throw new Error('The document should be opened for completion, file: ' + uri);
-        }
-
-        const languageId = this.docManager.getLanguageAtPosition(
-            document,
-            params.position
-        );
-
-        const activeLang = this.langs[languageId];
         if (activeLang) {
             return activeLang.getDocumentHighlight(
                 document.textDoc, params.position
@@ -223,21 +192,10 @@ export class LangManager {
         }
     }
 
-    getDefinition(params:DefinitionParams) {
-        const uri = params.textDocument.uri;
-        const document = this.docManager.getByURI(
-            uri
+    getDefinition(params: DefinitionParams) {
+        const { activeLang, document } = this.getActiveLang(
+            params.textDocument.uri, params.position
         );
-        if (!document) {
-            throw new Error('The document should be opened for completion, file: ' + uri);
-        }
-
-        const languageId = this.docManager.getLanguageAtPosition(
-            document,
-            params.position
-        );
-
-        const activeLang = this.langs[languageId];
         if (activeLang) {
             return activeLang.getDefinition(
                 document.textDoc, params.position

@@ -37,6 +37,5 @@ export enum TokenModifier {
     defaultLibrary,
     local,
 
-    // vue composition api
     refValue
 }
