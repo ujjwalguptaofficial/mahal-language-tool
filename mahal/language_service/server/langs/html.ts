@@ -45,10 +45,8 @@ export class HtmlLang extends MahalLang {
         })
     }
 
-    doHover(document: TextDocument, position: Position) {
-
-        const { doc } = this.getDoc(document);
-
+    doHover(document: MahalDoc, position: Position) {
+        const doc = document.textDoc;
         return this.langService.doHover(
             doc,
             position,

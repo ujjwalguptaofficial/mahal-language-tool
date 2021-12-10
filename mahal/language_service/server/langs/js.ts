@@ -4,7 +4,7 @@ import { CompletionEntry, Node, CompletionsTriggerCharacter, createScanner, disp
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition } from "vscode-languageserver/node";
 import * as Previewer from '../utils/previewer';
-import { getFilePathFromURL, getURLFromPath, toSymbolKind } from "../utils";
+import { getFilePathFromURL, getURLFromPath, isMahalFile, toSymbolKind } from "../utils";
 import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../constants";
 import { ISemanticTokenOffsetData } from "../interfaces";
 import { RefTokensService } from "../services";
@@ -107,10 +107,9 @@ export class JsLang extends MahalLang {
     }
 
 
-    doHover(document: TextDocument, position: Position) {
+    doHover(document: MahalDoc, position: Position) {
         const uri = document.uri;
-        const { doc: savedDoc, regions } = this.getDoc(document);
-        const region = regions[0];
+        const region = this.getRegion(document);
         const offset = document.offsetAt(position) - region.start;
         const info = this.langService.getQuickInfoAtPosition(
             this.getFileName(uri), offset
@@ -148,7 +147,9 @@ export class JsLang extends MahalLang {
             return {
                 contents: markedContents,
                 range: convertRange(
-                    document, info.textSpan, region.start
+                    document.textDoc,
+                    info.textSpan,
+                    region.start
                 ),
             } as Hover;
         }
@@ -190,48 +191,40 @@ export class JsLang extends MahalLang {
         return item;
     }
 
-    getReferences(document: TextDocument, position: Position): Location[] {
+    getReferences(document: MahalDoc, position: Position): Location[] {
         const uri = document.uri;
-        try {
-
-
-            const { regions } = this.getDoc(document);
-            const region = regions[0];
-            const offset = document.offsetAt(position) - region.start;
-            const references = this.langService.getReferencesAtPosition(
-                this.getFileName(uri),
-                offset
-            );
-            if (!references) {
-                return [];
-            }
-            const referenceResults: Location[] = [];
-            const program = this.langService.getProgram();
-            if (!program) {
-                return [];
-            }
-
-            references.forEach(r => {
-                const referenceTargetDoc = getSourceDoc(r.fileName, program);
-                if (referenceTargetDoc) {
-                    referenceResults.push({
-                        uri: uri,
-                        range: convertRange(
-                            document, r.textSpan,
-                            region.start
-                        )
-                    });
-                }
-            });
-            return referenceResults;
-        } catch (error) {
-            console.log("error in reference", error);
+        const region = this.getRegion(document);
+        const offset = document.offsetAt(position) - region.start;
+        const references = this.langService.getReferencesAtPosition(
+            this.getFileName(uri),
+            offset
+        );
+        if (!references) {
+            return [];
         }
+        const referenceResults: Location[] = [];
+        const program = this.langService.getProgram();
+        if (!program) {
+            return [];
+        }
+
+        references.forEach(r => {
+            const referenceTargetDoc = getSourceDoc(r.fileName, program);
+            if (referenceTargetDoc) {
+                referenceResults.push({
+                    uri: uri,
+                    range: convertRange(
+                        document.textDoc, r.textSpan,
+                        region.start
+                    )
+                });
+            }
+        });
+        return referenceResults;
     }
-    getSignatureHelp(document: TextDocument, position: Position): SignatureHelp | null {
+    getSignatureHelp(document: MahalDoc, position: Position): SignatureHelp | null {
         const uri = document.uri;
-        const { regions } = this.getDoc(document);
-        const region = regions[0];
+        const region = this.getRegion(document);
         const offset = document.offsetAt(position) - region.start
         const signatureHelpItems = this.langService.getSignatureHelpItems(
             this.getFileName(uri), offset, {}
@@ -286,10 +279,9 @@ export class JsLang extends MahalLang {
             signatures
         } as SignatureHelp;
     }
-    getDocumentSymbols(document: TextDocument) {
+    getDocumentSymbols(document: MahalDoc) {
         const uri = document.uri;
-        const { doc: savedDoc, regions } = this.getDoc(document);
-        const region = regions[0];
+        const region = this.getRegion(document);
 
         const items = this.langService.getNavigationBarItems(
             this.getFileName(uri)
@@ -314,7 +306,7 @@ export class JsLang extends MahalLang {
                     location: {
                         uri: uri,
                         range: convertRange(
-                            document,
+                            document.textDoc,
                             item.spans[0],
                             region.start
                         )
@@ -337,11 +329,10 @@ export class JsLang extends MahalLang {
         // console.log("result", result);
         return result;
     }
-    getDocumentHighlight(document: TextDocument, position: Position): DocumentHighlight[] {
+    getDocumentHighlight(document: MahalDoc, position: Position): DocumentHighlight[] {
 
         const uri = document.uri;
-        const { doc: savedDoc, regions } = this.getDoc(document);
-        const region = regions[0];
+        const region = this.getRegion(document);
         const offset = document.offsetAt(position) - region.start;
 
         const occurrences = this.langService.getReferencesAtPosition(
@@ -354,7 +345,7 @@ export class JsLang extends MahalLang {
         const occurrencess = occurrences.map(entry => {
             return {
                 range: convertRange(
-                    document, entry.textSpan, region.start
+                    document.textDoc, entry.textSpan, region.start
                 ),
                 kind: entry.isWriteAccess ? DocumentHighlightKind.Write : DocumentHighlightKind.Text
             };
@@ -364,15 +355,14 @@ export class JsLang extends MahalLang {
         return occurrencess;
     }
 
-    getSemanticTokens(document: TextDocument) {
+    getSemanticTokens(document: MahalDoc) {
         const uri = document.uri;
-        const { doc: savedDoc, regions } = this.getDoc(document);
-        const region = regions[0];
+        const region = this.getRegion(document);
         // const start = document.offsetAt(range.start) - region.start;
         // const end = document.offsetAt(range.end) - region.start;
         // const offset = document.offsetAt(range.start) - region.start;
 
-        const scriptText = savedDoc.getText();
+        const scriptText = document.getText();
         if (scriptText.length > SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT) {
             return [];
         }
@@ -424,8 +414,8 @@ export class JsLang extends MahalLang {
             this.refTokensService.send(
                 uri,
                 refTokens.map(t => Range.create(
-                    savedDoc.positionAt(t[0] + region.start),
-                    savedDoc.positionAt(t[1] + region.start))
+                    document.positionAt(t[0] + region.start),
+                    document.positionAt(t[1] + region.start))
                 )
             );
         }
@@ -441,11 +431,10 @@ export class JsLang extends MahalLang {
         });
     }
 
-    getDefinition(document: TextDocument, position: Position): Definition {
+    getDefinition(document: MahalDoc, position: Position): Definition {
         const uri = document.uri;
         const fileFsPath = this.getFileName(uri);
-        const { regions } = this.getDoc(document);
-        const region = regions[0];
+        const region = this.getRegion(document);
         const offset = document.offsetAt(position) - region.start;
         const definitions = this.langService.getDefinitionAtPosition(
             fileFsPath, offset
@@ -467,9 +456,9 @@ export class JsLang extends MahalLang {
             definitionResults.push({
                 uri: getURLFromPath(d.fileName),
                 range: convertRange(
-                    definitionTargetDoc, d.textSpan,
-
-                    //  region.start
+                    definitionTargetDoc,
+                    d.textSpan,
+                    isMahalFile(d.fileName) ? region.start : 0
                 )
             });
         });

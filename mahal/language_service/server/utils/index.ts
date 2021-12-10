@@ -4,3 +4,4 @@ export * from "./to_symbol_kind";
 export * from "./event_bus";
 export * from "./get_file_path_from_url";
 export * from "./get_compilation_setting";
+export * from "./is_mahal_file";

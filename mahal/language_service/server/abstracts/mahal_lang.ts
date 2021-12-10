@@ -27,24 +27,29 @@ export abstract class MahalLang {
         )
     }
 
+    protected getRegion(document: MahalDoc) {
+        const languageRegions = document.regions.filter(item => item.languageId === this.id);
+        return languageRegions[0]
+    }
+
     abstract id: string;
     abstract doComplete(document: MahalDoc, position: Position): CompletionList | Promise<CompletionList>;
-    abstract doHover(document: TextDocument, position: Position): Hover;
+    abstract doHover(document: MahalDoc, position: Position): Hover;
     abstract doResolve(item: CompletionItem): CompletionItem;
-    getReferences(document: TextDocument, position: Position): Location[] {
+    getReferences(document: MahalDoc, position: Position): Location[] {
         return [];
     }
-    getDefinition(document: TextDocument, position: Position): Definition {
+    getDefinition(document: MahalDoc, position: Position): Definition {
         return [];
     }
-    abstract getSignatureHelp(document: TextDocument, position: Position): SignatureHelp;
-    getDocumentSymbols(doc: TextDocument): SymbolInformation[] {
+    abstract getSignatureHelp(document: MahalDoc, position: Position): SignatureHelp;
+    getDocumentSymbols(doc: MahalDoc): SymbolInformation[] {
         return [];
     }
-    getDocumentHighlight(document: TextDocument, position: Position): DocumentHighlight[] {
+    getDocumentHighlight(document: MahalDoc, position: Position): DocumentHighlight[] {
         return [];
     }
-    getSemanticTokens(document: TextDocument, range?: Range): ISemanticTokenData[] {
+    getSemanticTokens(document: MahalDoc, range?: Range): ISemanticTokenData[] {
         return [];
     }
 }

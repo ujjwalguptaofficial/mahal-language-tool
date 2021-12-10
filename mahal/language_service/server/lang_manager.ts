@@ -95,7 +95,7 @@ export class LangManager {
         );
 
         if (activeLang) {
-            return activeLang.doHover(document.textDoc, position);
+            return activeLang.doHover(document, position);
         }
     }
 
@@ -116,7 +116,7 @@ export class LangManager {
 
         if (activeLang) {
             return activeLang.getReferences(
-                document.textDoc, params.position
+                document, params.position
             );
         }
     }
@@ -127,7 +127,7 @@ export class LangManager {
 
         if (activeLang) {
             return activeLang.getSignatureHelp(
-                document.textDoc, params.position
+                document, params.position
             );
         }
     }
@@ -151,7 +151,7 @@ export class LangManager {
         while (!lang.done) {
             symbols = symbols.concat(
                 (lang.value as MahalLang).
-                    getDocumentSymbols(document.textDoc)
+                    getDocumentSymbols(document)
             )
             lang = langs.next();
         }
@@ -167,7 +167,7 @@ export class LangManager {
         while (!lang.done) {
             data = data.concat(
                 (lang.value as MahalLang).
-                    getSemanticTokens(document.textDoc)
+                    getSemanticTokens(document)
             )
             lang = langs.next();
         }
@@ -187,7 +187,7 @@ export class LangManager {
         );
         if (activeLang) {
             return activeLang.getDocumentHighlight(
-                document.textDoc, params.position
+                document, params.position
             );
         }
     }
@@ -198,7 +198,7 @@ export class LangManager {
         );
         if (activeLang) {
             return activeLang.getDefinition(
-                document.textDoc, params.position
+                document, params.position
             );
         }
 
