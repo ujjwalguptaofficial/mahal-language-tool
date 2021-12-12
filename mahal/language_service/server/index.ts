@@ -17,7 +17,7 @@ export function getSemanticTokenLegends(): SemanticTokensLegend {
         [TokenModifier.defaultLibrary, SemanticTokenModifiers.defaultLibrary],
         [TokenModifier.local, 'local'],
 
-       
+
         [TokenModifier.refValue, 'refValue']
     ] as const).forEach(([tsModifier, legend]) => (tokenModifiers[tsModifier] = legend));
 

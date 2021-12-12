@@ -24,7 +24,7 @@ export class JsLang extends MahalLang {
     doComplete(document: MahalDoc, position: Position) {
         const uri = document.uri;
         // const { doc: savedDoc, regions } = this.getDoc(document);
-        const region = document.regions[0]; //regions[0];
+        const region = this.getRegion(document);//regions[0];
         const offset = document.offsetAt(position) - region.start;
         const fileText = document.getText();
 

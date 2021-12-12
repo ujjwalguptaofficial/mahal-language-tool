@@ -17,7 +17,7 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-    console.log("workspace folders",workspace.workspaceFolders, workspace.rootPath);
+    console.log("workspace folders", workspace.workspaceFolders, workspace.rootPath);
     const socketPort = workspace.getConfiguration('languageServerExample').get('port', 7000);
     let socket: WebSocket | null = null;
 
@@ -73,6 +73,21 @@ export function activate(context: ExtensionContext) {
     const clientOptions: LanguageClientOptions = {
         // Register the server for plain text documents
         documentSelector: [{ scheme: 'file', language: 'mahal' }],
+        synchronize: {
+            // configurationSection: [
+            //     'vetur',
+            //     'sass',
+            //     'emmet',
+            //     'html',
+            //     'css',
+            //     'javascript',
+            //     'typescript',
+            //     'prettier',
+            //     'stylusSupremacy',
+            //     'languageStylus'
+            // ],
+            fileEvents: workspace.createFileSystemWatcher('{**/*.js,**/*.ts,**/*.json}', false, false, true)
+        },
         // Hijacks all LSP logs and redirect them to a specific port through WebSocket connection
         outputChannel: websocketOutputChannel
     };

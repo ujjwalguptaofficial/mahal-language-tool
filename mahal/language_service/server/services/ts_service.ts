@@ -43,7 +43,7 @@ export class TypeScriptService {
         };
         const tsConfig = getCompilationSetting(tsConfigCompilerOptions);
         console.log('path', tsConfigPath);
-        console.log('tsconfig', this.tsConfig);
+        console.log('tsconfig', tsConfig);
         return tsConfig;
     }
 
@@ -84,15 +84,9 @@ export class TypeScriptService {
             },
             getDefaultLibFileName: (options) => {
                 const libPath = getDefaultLibFilePath(options);
-                // console.log("libPath", libPath);
-                // console.log("options", options);
                 return libPath;
             },
             getScriptFileNames: () => {
-                // const files = Array.from(docManager.docs.keys as any).map(item => {
-                //     return item + ".ts"
-                // });
-                // console.log("getScriptFileNames", files);
                 return this.fileNames;
             },
             getScriptSnapshot: (filePath) => {
@@ -103,9 +97,7 @@ export class TypeScriptService {
                     fileText = sys.readFile(getFilePathFromURL(filePath)) || '';
                 }
                 else {
-                    // const uri = getFileName(filePath);
                     if (docManager.isDocExist(filePath)) {
-                        // console.log("uri", uri);
                         const { doc } = docManager.getEmbeddedDocument(
                             getURLFromPath(filePath),
                             'javascript'
@@ -129,40 +121,33 @@ export class TypeScriptService {
                 // console.log("getScriptVersion uri", uri);
                 const doc = docManager.getByPath(filePath);
                 // console.log("getScriptVersion", filePath, doc);
-                const version = doc ? doc.version : 0;
+                const version = doc ? doc.version : (docManager.externalDocs.get(filePath) || 0);
+                console.log('version', version, filePath);
                 return version.toString();
             },
             fileExists: (fileName) => {
                 const value = sys.fileExists(getFilePathFromURL(fileName));
-                // console.log("fileExists", fileName, value);
                 return value;
             },
             directoryExists: (directory) => {
                 const value = sys.directoryExists(getFilePathFromURL(directory));
-                // console.log("directory", directory, value);
                 return value;
             },
             readDirectory: (filePath) => {
                 const value = sys.readDirectory(getFilePathFromURL(filePath));
-                // console.log("readDirectory", filePath, value);
                 return value;
             },
             readFile: (filePath) => {
                 const value = sys.readFile(getFilePathFromURL(filePath));
-                // console.log("readFile", filePath);
                 return value;
             },
             useCaseSensitiveFileNames: () => true,
             getDirectories: (filePath: string) => {
                 const value = sys.getDirectories(getFilePathFromURL(filePath));
-                // console.log('getDirectories path', filePath);
                 return value;
             },
             resolveModuleNames: (moduleNames: string[], containingFile: string) => {
 
-                // containingFile = getFileName(containingFile);
-                // console.log("moduleNames", moduleNames, "containingFile", containingFile);
-                // return [];
                 const moduleHost: ModuleResolutionHost = {
                     fileExists: host.fileExists,
                     directoryExists: host.directoryExists,
@@ -192,9 +177,8 @@ export class TypeScriptService {
             true, this.workSpaceDir
         );
 
-        const newService = createLanguageService(this.host, registry);
+        return createLanguageService(this.host, registry);
 
-        return newService;
     }
 }
 

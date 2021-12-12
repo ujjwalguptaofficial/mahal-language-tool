@@ -1,12 +1,15 @@
 import { EventEmitter } from "stream";
+import { FileChangeEvent } from "vscode";
 import { LanguageService } from "vscode-html-languageservice";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, Position, TextDocumentContentChangeEvent } from "vscode-languageserver/node";
+import { DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, FileChangeType, Position, TextDocumentContentChangeEvent } from "vscode-languageserver/node";
 import { DOC_EVENT } from "../enums";
 import { MahalDoc } from "../models";
 import { getEmbeddedDocument, getFilePathFromURL } from "../utils";
 
 export class DocManager {
+
+    externalDocs = new Map<string, number>();
 
     docs = new Map<string, MahalDoc>();
 
@@ -16,6 +19,21 @@ export class DocManager {
 
     constructor(languageService: LanguageService) {
         this.languageService = languageService;
+    }
+
+    onExternalDocChange(param: DidChangeWatchedFilesParams) {
+        // console.log('We received a file change event');
+        param.changes.forEach(async c => {
+            if (c.type === FileChangeType.Changed) {
+                const path = getFilePathFromURL(c.uri);
+                const version = this.externalDocs.get(path) || 0;
+                this.externalDocs.set(
+                    path,
+                    version + 1
+                )
+            }
+            console.log("c", c.type);
+        })
     }
 
     on(event: DOC_EVENT, cb: Function) {

@@ -1,3 +1,4 @@
+import { FileChangeType } from 'vscode';
 import { getLanguageService } from 'vscode-html-languageservice';
 import { CompletionItem, Connection, DefinitionParams, DocumentHighlightParams, DocumentSymbolParams, InitializeParams, Position, ReferenceParams, SemanticTokensBuilder, SemanticTokensParams, SignatureHelpParams, SymbolInformation, TextDocumentIdentifier } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
@@ -6,6 +7,7 @@ import { HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
 import { MahalDoc } from './models';
 import { TypeScriptService, RefTokensService } from './services';
+import { getFilePathFromURL, isMahalFile } from './utils';
 
 export class LangManager {
 
@@ -41,6 +43,10 @@ export class LangManager {
         );
         connection.onDidCloseTextDocument(
             docManager.didCloseTextDocument.bind(docManager)
+        );
+
+        connection.onDidChangeWatchedFiles(
+            docManager.onExternalDocChange.bind(docManager)
         );
 
 
@@ -203,5 +209,6 @@ export class LangManager {
         }
 
     }
+
 
 }
