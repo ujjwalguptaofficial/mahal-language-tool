@@ -1,5 +1,4 @@
 import { EventEmitter } from "stream";
-import { FileChangeEvent } from "vscode";
 import { LanguageService } from "vscode-html-languageservice";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, FileChangeType, Position, TextDocumentContentChangeEvent } from "vscode-languageserver/node";
@@ -7,7 +6,17 @@ import { DOC_EVENT } from "../enums";
 import { MahalDoc } from "../models";
 import { getEmbeddedDocument, getFilePathFromURL } from "../utils";
 
+interface IEditorConfig {
+    tabSize: number;
+    indentSize: number;
+    script: {
+        format: boolean;
+        validate: boolean;
+    }
+}
+
 export class DocManager {
+
 
     externalDocs = new Map<string, number>();
 
@@ -19,6 +28,19 @@ export class DocManager {
 
     constructor(languageService: LanguageService) {
         this.languageService = languageService;
+    }
+
+    editorConfig: IEditorConfig;
+
+    setEditorConfig() {
+        this.editorConfig = {
+            tabSize: 2,
+            indentSize: 2,
+            script: {
+                format: true,
+                validate: true
+            }
+        }
     }
 
     onExternalDocChange(param: DidChangeWatchedFilesParams) {

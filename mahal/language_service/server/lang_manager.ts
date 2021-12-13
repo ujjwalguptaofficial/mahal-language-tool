@@ -1,6 +1,12 @@
-import { FileChangeType } from 'vscode';
 import { getLanguageService } from 'vscode-html-languageservice';
-import { CompletionItem, Connection, DefinitionParams, DocumentHighlightParams, DocumentSymbolParams, InitializeParams, Position, ReferenceParams, SemanticTokensBuilder, SemanticTokensParams, SignatureHelpParams, SymbolInformation, TextDocumentIdentifier } from 'vscode-languageserver/node';
+import {
+    CompletionItem, Connection, DefinitionParams,
+    DocumentFormattingOptions,
+    DocumentFormattingParams,
+    DocumentHighlightParams, DocumentSymbolParams, InitializeParams,
+    Position, ReferenceParams, SemanticTokensBuilder, SemanticTokensParams,
+    SignatureHelpParams, SymbolInformation, TextDocumentIdentifier, TextEdit,
+} from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
 import { ISemanticTokenData } from './interfaces';
 import { HtmlLang, JsLang } from './langs';
@@ -8,6 +14,7 @@ import { DocManager } from './managers';
 import { MahalDoc } from './models';
 import { TypeScriptService, RefTokensService } from './services';
 import { getFilePathFromURL, isMahalFile } from './utils';
+
 
 export class LangManager {
 
@@ -25,6 +32,8 @@ export class LangManager {
         const docManager = this.docManager = new DocManager(
             htmlService
         );
+
+        docManager.setEditorConfig();
 
         const jsService = new TypeScriptService(params,
             docManager
@@ -59,6 +68,9 @@ export class LangManager {
                 jsService, this.docManager, refTokensService
             );
         }
+
+        // const config =
+        //     console.log("config", config);
     }
 
     getByURI(uri: string) {
@@ -208,6 +220,25 @@ export class LangManager {
             );
         }
 
+    }
+
+    format(params: DocumentFormattingParams) {
+        const uri = params.textDocument.uri;
+        const langs = this.eachLang(uri);
+        const document = langs.next().value as MahalDoc;
+        var lang = langs.next()
+        let symbols: TextEdit[] = [];
+        while (!lang.done) {
+            symbols = symbols.concat(
+                (lang.value as MahalLang).
+                    format(
+                        document,
+                        params.options
+                    )
+            )
+            lang = langs.next();
+        }
+        return symbols;
     }
 
 

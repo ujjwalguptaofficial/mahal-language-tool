@@ -1,4 +1,4 @@
-import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight } from "vscode-languageserver-protocol/node";
+import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight, FormattingOptions, TextEdit } from "vscode-languageserver-protocol/node";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { Definition, SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
 import { ISemanticTokenData } from "../interfaces";
@@ -50,6 +50,9 @@ export abstract class MahalLang {
         return [];
     }
     getSemanticTokens(document: MahalDoc, range?: Range): ISemanticTokenData[] {
+        return [];
+    }
+    format(doc: MahalDoc, formatParams: FormattingOptions): TextEdit[] {
         return [];
     }
 }

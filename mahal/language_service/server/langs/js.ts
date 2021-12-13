@@ -1,8 +1,8 @@
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
-import { CompletionEntry, Node, CompletionsTriggerCharacter, createScanner, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression } from "typescript";
+import { CompletionEntry, Node, CompletionsTriggerCharacter, createScanner, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression, IndentStyle } from "typescript";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition } from "vscode-languageserver/node";
+import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition, FormattingOptions, TextEdit } from "vscode-languageserver/node";
 import * as Previewer from '../utils/previewer';
 import { getFilePathFromURL, getURLFromPath, isMahalFile, toSymbolKind } from "../utils";
 import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../constants";
@@ -463,6 +463,41 @@ export class JsLang extends MahalLang {
             });
         });
         return definitionResults;
+    }
+
+    format(doc: MahalDoc, formatParams: FormattingOptions) {
+        const uri = doc.uri;
+        const fileFsPath = this.getFileName(uri);
+        const editorConfig = this.docManager.editorConfig;
+        const region = this.getRegion(doc);
+        return this.langService.getFormattingEditsForRange(
+            fileFsPath,
+            region.start,
+            region.end,
+            {
+                TabSize: editorConfig.tabSize,//editorConfig.tabSize,
+                ConvertTabsToSpaces: false,
+                insertSpaceAfterCommaDelimiter: true,
+                insertSpaceAfterConstructor: false,
+                insertSpaceAfterFunctionKeywordForAnonymousFunctions: true,
+                InsertSpaceAfterKeywordsInControlFlowStatements: true,
+                insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: true,
+                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true,
+                InsertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: true,
+                InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false,
+                InsertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: false,
+                insertSpaceAfterSemicolonInForStatements: true,
+                insertSpaceBeforeAndAfterBinaryOperators: true,
+                IndentSize: editorConfig.indentSize,
+                IndentStyle: IndentStyle.None,
+
+            }
+        ).map(item => {
+            return {
+                newText: item.newText,
+                range: convertRange(doc.textDoc, item.span, region.start),
+            } as TextEdit
+        })
     }
 }
 

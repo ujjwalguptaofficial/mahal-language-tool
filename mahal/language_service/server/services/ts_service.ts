@@ -1,5 +1,5 @@
 import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode, resolveModuleName, Extension, ModuleResolutionHost, ModuleResolutionKind } from "typescript";
-import { InitializeParams } from "vscode-languageserver-protocol";
+import { InitializeParams } from "vscode-languageserver/node";
 import { DocManager } from "../managers";
 import { getCompilationSetting, getURLFromPath, getFilePathFromURL } from "../utils";
 
@@ -122,7 +122,7 @@ export class TypeScriptService {
                 const doc = docManager.getByPath(filePath);
                 // console.log("getScriptVersion", filePath, doc);
                 const version = doc ? doc.version : (docManager.externalDocs.get(filePath) || 0);
-                console.log('version', version, filePath);
+                // console.log('version', version, filePath);
                 return version.toString();
             },
             fileExists: (fileName) => {

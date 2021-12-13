@@ -39,12 +39,15 @@ export function activate(context: ExtensionContext) {
     // If the extension is launched in debug mode then the debug server options are used
     // Otherwise the run options are used
     const serverOptions: ServerOptions = {
-        run: { module: serverModule, transport: TransportKind.ipc },
+        run: { module: serverModule, transport: TransportKind.ipc, },
         debug: {
             module: serverModule,
             transport: TransportKind.ipc,
             options: debugOptions,
-        }
+        },
+        options: {
+            env: {}
+        },
     };
     // The log to send
     let log = '';
@@ -89,7 +92,10 @@ export function activate(context: ExtensionContext) {
             fileEvents: workspace.createFileSystemWatcher('{**/*.js,**/*.ts,**/*.json}', false, false, true)
         },
         // Hijacks all LSP logs and redirect them to a specific port through WebSocket connection
-        outputChannel: websocketOutputChannel
+        outputChannel: websocketOutputChannel,
+        initializationOptions: {
+            clientConfig: workspace.getConfiguration()
+        },
     };
 
     // Create the language client and start the client.

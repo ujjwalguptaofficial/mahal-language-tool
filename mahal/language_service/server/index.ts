@@ -47,6 +47,7 @@ export function getSemanticTokenLegends(): SemanticTokensLegend {
 }
 
 connection.onInitialize((params) => {
+    console.log("init option", params.initializationOptions);
     langManager.listen(connection, params);
 
     return {
@@ -64,8 +65,8 @@ connection.onInitialize((params) => {
             },
             // codeActionProvider: true,
             definitionProvider: true,
-            // documentFormattingProvider: true,
-            // documentRangeFormattingProvider: true,
+            documentFormattingProvider: true,
+            documentRangeFormattingProvider: true,
             documentHighlightProvider: true,
             documentSymbolProvider: true,
             // executeCommandProvider: {
@@ -133,6 +134,13 @@ connection.languages.semanticTokens.onRange((params) => {
 connection.onDefinition((params) => {
     return langManager.getDefinition(params);
 })
+
+connection.onDocumentFormatting(params => {
+    return langManager.format(params);
+})
+
+
+// connection.languages.
 
 
 connection.listen();
