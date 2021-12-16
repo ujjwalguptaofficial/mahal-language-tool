@@ -1,4 +1,5 @@
 import { EventEmitter } from "stream";
+import { IndentStyle } from "typescript";
 import { LanguageService } from "vscode-html-languageservice";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, FileChangeType, Position, TextDocumentContentChangeEvent } from "vscode-languageserver/node";
@@ -6,13 +7,30 @@ import { DOC_EVENT } from "../enums";
 import { MahalDoc } from "../models";
 import { getEmbeddedDocument, getFilePathFromURL } from "../utils";
 
+interface IEditorScriptFormat {
+    enable: boolean;
+    convertTabsToSpaces: boolean;
+    insertSpaceAfterCommaDelimiter: boolean;
+    insertSpaceAfterConstructor: false;
+    insertSpaceAfterFunctionKeywordForAnonymousFunctions: true;
+    insertSpaceAfterKeywordsInControlFlowStatements: true;
+    insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: true;
+    insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true;
+    insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: true;
+    insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false;
+    insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: false;
+    insertSpaceAfterSemicolonInForStatements: true;
+    insertSpaceBeforeAndAfterBinaryOperators: true;
+}
+
 interface IEditorConfig {
     tabSize: number;
     indentSize: number;
     script: {
-        format: boolean;
+        format: IEditorScriptFormat;
         validate: boolean;
-    }
+    },
+    indentStyle: IndentStyle;
 }
 
 export class DocManager {
@@ -32,14 +50,31 @@ export class DocManager {
 
     editorConfig: IEditorConfig;
 
-    setEditorConfig() {
+    setEditorConfig(config: IEditorConfig) {
+        const scriptFormat = config.script.format;
+        const defaultScriptFormat: IEditorScriptFormat = {
+            enable: true,
+            convertTabsToSpaces: false,
+            insertSpaceAfterCommaDelimiter: true,
+            insertSpaceAfterConstructor: false,
+            insertSpaceAfterFunctionKeywordForAnonymousFunctions: true,
+            insertSpaceAfterKeywordsInControlFlowStatements: true,
+            insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: true,
+            insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true,
+            insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: true,
+            insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false,
+            insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: false,
+            insertSpaceAfterSemicolonInForStatements: true,
+            insertSpaceBeforeAndAfterBinaryOperators: true,
+        };
         this.editorConfig = {
             tabSize: 2,
             indentSize: 2,
             script: {
-                format: true,
+                format: Object.assign(defaultScriptFormat, scriptFormat),
                 validate: true
-            }
+            },
+            indentStyle: IndentStyle.None,
         }
     }
 
@@ -54,7 +89,6 @@ export class DocManager {
                     version + 1
                 )
             }
-            console.log("c", c.type);
         })
     }
 

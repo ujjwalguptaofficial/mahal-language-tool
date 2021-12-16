@@ -47,7 +47,7 @@ export function getSemanticTokenLegends(): SemanticTokensLegend {
 }
 
 connection.onInitialize((params) => {
-    console.log("init option", params.initializationOptions);
+    console.log("init option", params.initializationOptions.clientConfig);
     langManager.listen(connection, params);
 
     return {

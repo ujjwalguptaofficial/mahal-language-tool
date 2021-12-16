@@ -33,7 +33,7 @@ export class LangManager {
             htmlService
         );
 
-        docManager.setEditorConfig();
+        docManager.setEditorConfig(params.initializationOptions.clientConfig);
 
         const jsService = new TypeScriptService(params,
             docManager

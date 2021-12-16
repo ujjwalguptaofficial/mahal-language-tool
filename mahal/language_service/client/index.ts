@@ -94,7 +94,11 @@ export function activate(context: ExtensionContext) {
         // Hijacks all LSP logs and redirect them to a specific port through WebSocket connection
         outputChannel: websocketOutputChannel,
         initializationOptions: {
-            clientConfig: workspace.getConfiguration()
+            clientConfig: {
+                script: {
+                    format: workspace.getConfiguration('javascript').get('format')
+                }
+            }
         },
     };
 

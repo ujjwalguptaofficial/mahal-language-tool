@@ -158,7 +158,6 @@ export class JsLang extends MahalLang {
 
     doResolve(item: CompletionItem) {
         const uri = item.data.uri;
-        console.log("doResolve", uri);
         const details = this.langService.getCompletionEntryDetails(
             this.getFileName(uri),
             item.data.offset,
@@ -166,7 +165,6 @@ export class JsLang extends MahalLang {
             item.data.source, undefined,
             item.data.tsData
         );
-        console.log("doResolve", details);
         if (details) {
             item.documentation = displayPartsToString(
                 details.documentation);
@@ -466,9 +464,14 @@ export class JsLang extends MahalLang {
     }
 
     format(doc: MahalDoc, formatParams: FormattingOptions) {
+        const editorConfig = this.docManager.editorConfig;
+        const format = this.docManager.editorConfig.script.format;
+        if (!format.enable) {
+            return [];
+        }
+
         const uri = doc.uri;
         const fileFsPath = this.getFileName(uri);
-        const editorConfig = this.docManager.editorConfig;
         const region = this.getRegion(doc);
         return this.langService.getFormattingEditsForRange(
             fileFsPath,
@@ -476,21 +479,20 @@ export class JsLang extends MahalLang {
             region.end,
             {
                 TabSize: editorConfig.tabSize,//editorConfig.tabSize,
-                ConvertTabsToSpaces: false,
-                insertSpaceAfterCommaDelimiter: true,
-                insertSpaceAfterConstructor: false,
-                insertSpaceAfterFunctionKeywordForAnonymousFunctions: true,
-                InsertSpaceAfterKeywordsInControlFlowStatements: true,
-                insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: true,
-                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true,
-                InsertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: true,
-                InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false,
-                InsertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: false,
-                insertSpaceAfterSemicolonInForStatements: true,
-                insertSpaceBeforeAndAfterBinaryOperators: true,
+                ConvertTabsToSpaces: format.convertTabsToSpaces,
+                insertSpaceAfterCommaDelimiter: format.insertSpaceAfterCommaDelimiter,
+                insertSpaceAfterConstructor: format.insertSpaceAfterConstructor,
+                insertSpaceAfterFunctionKeywordForAnonymousFunctions: format.insertSpaceAfterFunctionKeywordForAnonymousFunctions,
+                InsertSpaceAfterKeywordsInControlFlowStatements: format.insertSpaceAfterKeywordsInControlFlowStatements,
+                insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces,
+                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces,
+                InsertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets,
+                InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: format.insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis,
+                InsertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: format.insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces,
+                insertSpaceAfterSemicolonInForStatements: format.insertSpaceAfterSemicolonInForStatements,
+                insertSpaceBeforeAndAfterBinaryOperators: format.insertSpaceBeforeAndAfterBinaryOperators,
                 IndentSize: editorConfig.indentSize,
-                IndentStyle: IndentStyle.None,
-
+                IndentStyle: editorConfig.indentStyle
             }
         ).map(item => {
             return {
