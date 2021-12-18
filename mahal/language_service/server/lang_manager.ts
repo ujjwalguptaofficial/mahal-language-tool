@@ -103,7 +103,7 @@ export class LangManager {
             docIdentifier.uri, position
         );
         if (activeLang) {
-            return activeLang.doComplete(document, position);
+            return activeLang.doComplete(document, position, this.langs['javascript'] as any);
         }
     }
 

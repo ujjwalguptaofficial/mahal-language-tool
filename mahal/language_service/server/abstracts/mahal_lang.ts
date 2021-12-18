@@ -2,6 +2,7 @@ import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlig
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { Definition, SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
 import { ISemanticTokenData } from "../interfaces";
+import { JsLang } from "../langs";
 import { DocManager } from "../managers";
 import { MahalDoc } from "../models";
 import { getFilePathFromURL } from "../utils";
@@ -33,7 +34,7 @@ export abstract class MahalLang {
     }
 
     abstract id: string;
-    abstract doComplete(document: MahalDoc, position: Position): CompletionList | Promise<CompletionList>;
+    abstract doComplete(document: MahalDoc, position: Position, jsLang: JsLang): CompletionList | Promise<CompletionList>;
     abstract doHover(document: MahalDoc, position: Position): Hover;
     doResolve(item: CompletionItem): CompletionItem {
         return null;

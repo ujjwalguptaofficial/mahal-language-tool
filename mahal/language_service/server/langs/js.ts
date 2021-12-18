@@ -324,7 +324,7 @@ export class JsLang extends MahalLang {
         };
 
         items.forEach(item => collectSymbols(item));
-        // console.log("result", result);
+        // console.log("getDocumentSymbols", result);
         return result;
     }
     getDocumentHighlight(document: MahalDoc, position: Position): DocumentHighlight[] {
