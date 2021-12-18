@@ -68,8 +68,8 @@ export class DocManager {
             insertSpaceBeforeAndAfterBinaryOperators: true,
         };
         this.editorConfig = {
-            tabSize: 2,
-            indentSize: 2,
+            tabSize: 4,
+            indentSize: 4,
             script: {
                 format: Object.assign(defaultScriptFormat, scriptFormat),
                 validate: true

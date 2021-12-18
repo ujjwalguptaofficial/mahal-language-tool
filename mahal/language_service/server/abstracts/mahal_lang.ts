@@ -35,14 +35,18 @@ export abstract class MahalLang {
     abstract id: string;
     abstract doComplete(document: MahalDoc, position: Position): CompletionList | Promise<CompletionList>;
     abstract doHover(document: MahalDoc, position: Position): Hover;
-    abstract doResolve(item: CompletionItem): CompletionItem;
+    doResolve(item: CompletionItem): CompletionItem {
+        return null;
+    }
     getReferences(document: MahalDoc, position: Position): Location[] {
         return [];
     }
     getDefinition(document: MahalDoc, position: Position): Definition {
         return [];
     }
-    abstract getSignatureHelp(document: MahalDoc, position: Position): SignatureHelp;
+    getSignatureHelp(document: MahalDoc, position: Position): SignatureHelp {
+        return null;
+    }
     getDocumentSymbols(doc: MahalDoc): SymbolInformation[] {
         return [];
     }
