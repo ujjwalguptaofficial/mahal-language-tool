@@ -20,9 +20,8 @@ export class HtmlLang extends MahalLang {
 
 
     doComplete(document: MahalDoc, position: Position, jsService: JsLang) {
-        const { doc } = this.getDoc(document.textDoc);
-        const region = this.getRegion(document);
-        const pos = doc.positionAt(document.offsetAt(position) - region.start);
+        const { doc, pos } = this.getActualPosition(document, position);
+
         return this.langService.doComplete2(
             doc,
             pos,
@@ -97,7 +96,7 @@ export class HtmlLang extends MahalLang {
     }
 
     getDocumentSymbols(document: MahalDoc): SymbolInformation[] {
-        const doc = document.textDoc;
+        const { doc } = this.getDoc(document);
         return this.langService.findDocumentSymbols(
             doc,
             this.langService.parseHTMLDocument(doc)

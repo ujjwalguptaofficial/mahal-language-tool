@@ -20,8 +20,18 @@ export abstract class MahalLang {
         // + ".ts";
     }
 
+    protected getActualPosition(document: MahalDoc, position: Position) {
+        const { doc } = this.getDoc(document);
+        const region = this.getRegion(document);
+        const pos = doc.positionAt(document.offsetAt(position) - region.start);
+        return {
+            doc,
+            pos: pos
+        }
+    }
 
-    protected getDoc(document: TextDocument) {
+
+    protected getDoc(document: MahalDoc) {
         return this.docManager.getEmbeddedDocument(
             document.uri,
             this.id

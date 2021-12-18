@@ -104,7 +104,7 @@ export class MahalDoc {
         const htmlStart = result.start;
         const htmlEnd = result.end;
         if (htmlStart && htmlEnd) {
-            console.log("pushed html", result);
+            // console.log("pushed html", result);
             regions.push({ languageId: 'html', start: htmlStart, end: htmlEnd });
         }
 

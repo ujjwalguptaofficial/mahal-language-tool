@@ -13,6 +13,7 @@ exports.default = {
     },
     externals: {
         vscode: 'vscode',
+        prettier: 'prettier',
         typescript: 'typescript',
     },
     module: {

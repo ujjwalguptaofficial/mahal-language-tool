@@ -8,11 +8,11 @@ import {
 } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
 import { ISemanticTokenData } from './interfaces';
-import { HtmlLang, JsLang } from './langs';
+import { CssLang, HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
 import { MahalDoc } from './models';
 import { TypeScriptService, RefTokensService } from './services';
-
+import { getCSSLanguageService } from "vscode-css-languageservice";
 
 export class LangManager {
 
@@ -59,6 +59,9 @@ export class LangManager {
 
         this.langs['html'] = new HtmlLang(
             htmlService, this.docManager
+        );
+        this.langs['css'] = new CssLang(
+            getCSSLanguageService(), this.docManager
         );
         if (jsService) {
             const refTokensService = new RefTokensService(connection)
