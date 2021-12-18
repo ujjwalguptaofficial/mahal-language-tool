@@ -52,7 +52,7 @@ export class HtmlLang extends MahalLang {
             })
             results = [
                 ...results,
-                ...jsService.getDocumentSymbols(document).map(item => {
+                ...jsService.getDocumentSymbolsForHTML(document).map(item => {
                     return {
                         label: item.name,
                         kind: item.kind

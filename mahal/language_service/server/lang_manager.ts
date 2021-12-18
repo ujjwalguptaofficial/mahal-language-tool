@@ -1,7 +1,6 @@
 import { getLanguageService } from 'vscode-html-languageservice';
 import {
     CompletionItem, Connection, DefinitionParams,
-    DocumentFormattingOptions,
     DocumentFormattingParams,
     DocumentHighlightParams, DocumentSymbolParams, InitializeParams,
     Position, ReferenceParams, SemanticTokensBuilder, SemanticTokensParams,
@@ -13,7 +12,6 @@ import { HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
 import { MahalDoc } from './models';
 import { TypeScriptService, RefTokensService } from './services';
-import { getFilePathFromURL, isMahalFile } from './utils';
 
 
 export class LangManager {

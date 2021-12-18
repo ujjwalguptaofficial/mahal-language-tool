@@ -49,22 +49,44 @@ export class MahalDoc {
         return this.textDoc.languageId;
     }
 
-    applyEdit(version: number, change: TextDocumentContentChangeEvent): void {
-        const content = this.getText();
-        let newContent = change.text;
-        if (TextDocumentContentChangeEvent.isIncremental(change)) {
-            const start = this.offsetAt(change.range.start);
-            const end = this.offsetAt(change.range.end);
-            newContent = content.substr(0, start) + change.text + content.substr(end);
-        }
+    applyEdit(version: number, changes: TextDocumentContentChangeEvent[]): void {
+        let content = this.getText();
+        // let newContent = change.text;
+        changes.forEach(change => {
+            if (TextDocumentContentChangeEvent.isIncremental(change)) {
+                const start = this.offsetAt(change.range.start);
+                const end = this.offsetAt(change.range.end);
+                content = content.substr(0, start) + change.text + content.substr(end);
+            }
+            else {
+                content = change.text;
+            }
+        });
+        // console.log("newcontent", content);
         this.setTextDoc(
             TextDocument.create(
                 this.uri,
                 this.languageId,
-                version, newContent
+                version, content
             )
         );
     }
+    // applyEdit(version: number, change: TextDocumentContentChangeEvent): void {
+    //     const content = this.getText();
+    //     let newContent = change.text;
+    //     if (TextDocumentContentChangeEvent.isIncremental(change)) {
+    //         const start = this.offsetAt(change.range.start);
+    //         const end = this.offsetAt(change.range.end);
+    //         newContent = content.substr(0, start) + change.text + content.substr(end);
+    //     }
+    //     this.setTextDoc(
+    //         TextDocument.create(
+    //             this.uri,
+    //             this.languageId,
+    //             version, newContent
+    //         )
+    //     );
+    // }
 
 
 

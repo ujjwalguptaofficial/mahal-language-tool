@@ -157,26 +157,27 @@ export class DocManager {
         if (textDocument.version == null) {
             throw new Error(`Received document change event for ${textDocument.uri} without valid version identifier`);
         }
+        document.applyEdit(textDocument.version, params.contentChanges);
 
-        for (const change of params.contentChanges) {
-            let line = 0;
-            let offset = 0;
-            let endLine = 0;
-            let endOffset = 0;
-            if (TextDocumentContentChangeEvent.isIncremental(change)) {
-                line = change.range.start.line + 1;
-                offset = change.range.start.character + 1;
-                endLine = change.range.end.line + 1;
-                endOffset = change.range.end.character + 1;
-            } else {
-                line = 1;
-                offset = 1;
-                const endPos = document.positionAt(document.getText().length);
-                endLine = endPos.line + 1;
-                endOffset = endPos.character + 1;
-            }
-            document.applyEdit(textDocument.version, change);
-        }
+        // for (const change of params.contentChanges) {
+            // let line = 0;
+            // let offset = 0;
+            // let endLine = 0;
+            // let endOffset = 0;
+            // if (TextDocumentContentChangeEvent.isIncremental(change)) {
+            //     line = change.range.start.line + 1;
+            //     offset = change.range.start.character + 1;
+            //     endLine = change.range.end.line + 1;
+            //     endOffset = change.range.end.character + 1;
+            // } else {
+            //     line = 1;
+            //     offset = 1;
+            //     const endPos = document.positionAt(document.getText().length);
+            //     endLine = endPos.line + 1;
+            //     endOffset = endPos.character + 1;
+            // }
+            // document.applyEdit(textDocument.version, change);
+        // }
     }
 
     getEmbeddedDocument(uri: string, languageId: string, ignoreAttributeValues?: boolean) {

@@ -4,7 +4,7 @@ import { CompletionEntry, Node, CompletionsTriggerCharacter, createScanner, disp
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition, FormattingOptions, TextEdit } from "vscode-languageserver/node";
 import * as Previewer from '../utils/previewer';
-import { getFilePathFromURL, getURLFromPath, isMahalFile, toSymbolKind } from "../utils";
+import { getURLFromPath, isMahalFile, toSymbolKind } from "../utils";
 import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../constants";
 import { ISemanticTokenOffsetData } from "../interfaces";
 import { RefTokensService } from "../services";
@@ -12,6 +12,8 @@ import { MahalDoc } from "../models";
 
 export class JsLang extends MahalLang {
     readonly id = 'javascript';
+
+    symbolsCacheForHTML: SymbolInformation[] = [];
 
     constructor(
         private langService: LanguageService,
@@ -22,6 +24,8 @@ export class JsLang extends MahalLang {
     }
 
     doComplete(document: MahalDoc, position: Position) {
+        this.symbolsCacheForHTML = [];
+
         const uri = document.uri;
         // const { doc: savedDoc, regions } = this.getDoc(document);
         const region = this.getRegion(document);//regions[0];
@@ -277,6 +281,88 @@ export class JsLang extends MahalLang {
             signatures
         } as SignatureHelp;
     }
+    getDocumentSymbolsForHTML(document: MahalDoc) {
+        if (this.symbolsCacheForHTML.length > 0) {
+            return this.symbolsCacheForHTML;
+        }
+        const uri = document.uri;
+        const region = this.getRegion(document);
+
+        const items = this.langService.getNavigationBarItems(
+            this.getFileName(uri)
+        );
+
+        // console.log("getDocumentSymbols region", region);
+
+        // console.log("getDocumentSymbols items", items);
+        if (!items) {
+            return [];
+        }
+
+        const result: SymbolInformation[] = [];
+        const existing: { [k: string]: boolean } = {};
+        const isProp = (kind: string) => {
+            switch (kind) {
+                case 'var':
+                case 'local var':
+                case 'const':
+                case 'function':
+                case 'local function':
+                // case 'enum':
+                //     return SymbolKind.Enum;
+                // case 'module':
+                //     return SymbolKind.Module;
+                // case 'class':
+                //     return SymbolKind.Class;
+                // case 'interface':
+                //     return SymbolKind.Interface;
+                case 'function':
+                case 'local function':
+                case 'method':
+                // case 'constructor':
+                //     return SymbolKind.Constructor;
+                case 'property':
+                case 'getter':
+                case 'setter':
+                    return true;
+            }
+            return false;
+        }
+        const collectSymbols = (item: NavigationBarItem, containerLabel?: string) => {
+
+            // console.log("collectSymbols items", item);
+            const sig = item.text + item.kind + item.spans[0].start;
+            if (item.kind !== 'script' && !existing[sig]) {
+                const symbol: SymbolInformation = {
+                    name: item.text,
+                    kind: toSymbolKind(item.kind),
+                    location: {
+                        uri: uri,
+                        range: convertRange(
+                            document.textDoc,
+                            item.spans[0],
+                            region.start
+                        )
+                    },
+                    containerName: containerLabel
+                };
+                existing[sig] = true;
+                if (isProp(item.kind)) {
+                    result.push(symbol);
+                }
+                containerLabel = item.text;
+            }
+
+            for (const child of item.childItems || []) {
+                collectSymbols(child, containerLabel);
+            }
+        };
+
+        items.forEach(item => collectSymbols(item));
+        // console.log("getDocumentSymbols", result);
+        this.symbolsCacheForHTML = result;
+        return result;
+    }
     getDocumentSymbols(document: MahalDoc) {
         const uri = document.uri;
         const region = this.getRegion(document);
@@ -316,10 +402,8 @@ export class JsLang extends MahalLang {
                 containerLabel = item.text;
             }
 
-            if (item.childItems && item.childItems.length > 0) {
-                for (const child of item.childItems) {
-                    collectSymbols(child, containerLabel);
-                }
+            for (const child of item.childItems || []) {
+                collectSymbols(child, containerLabel);
             }
         };
 
