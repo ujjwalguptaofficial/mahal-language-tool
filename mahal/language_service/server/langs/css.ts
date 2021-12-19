@@ -1,6 +1,6 @@
-import { Range } from "vscode-languageserver";
+import { Color, ColorPresentation, Range } from "vscode-languageserver/node";
 import { LanguageService } from "vscode-css-languageservice";
-import { CompletionList, FormattingOptions, Hover, TextEdit } from "vscode-languageserver";
+import { CompletionList, FormattingOptions, Hover, TextEdit } from "vscode-languageserver/node";
 import { Position } from "vscode-languageserver-textdocument";
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
@@ -43,11 +43,13 @@ export class CssLang extends MahalLang {
             doc, pos,
             this.langService.parseStylesheet(doc)
         );
+        if (result) {
+            this.setRelativeRange(result.range, position);
+        }
 
         // result.range.start.line = position.line;
         // result.range.end.line = position.line;
 
-        this.setRelativeRange(result.range, position)
         return result;
     }
 
@@ -95,5 +97,43 @@ export class CssLang extends MahalLang {
         return [
             TextEdit.replace(range, formattedString)
         ];
+    }
+
+    getColors(document: MahalDoc) {
+        const { doc } = this.getDoc(document);
+        const region = this.getRegion(document);
+        // console.log("getColors", doc.getText());
+        const result = this.langService.findDocumentColors(
+            doc,
+            this.langService.parseStylesheet(doc)
+        );
+        // console.log("getColors", result.length);
+        const pos = document.positionAt(region.start);
+        result.forEach(item => {
+            // console.log("item", item);
+            item.range.start.line += pos.line;
+            item.range.end.line += pos.line;
+            // console.log("item range", item);
+        })
+        return result;
+    }
+    getColorPresentation(document: MahalDoc, color: Color, range: Range) {
+
+        const { doc } = this.getDoc(document);
+        const region = this.getRegion(document);
+        // console.log("getColors", doc.getText());
+        const result = this.langService.getColorPresentations(
+            doc,
+            this.langService.parseStylesheet(doc),
+            color,
+            range
+        );
+        // console.log("getColorPresentation", result.length);
+        const pos = document.positionAt(region.start);
+        result.forEach(item => {
+            item.textEdit.range.start.line += pos.line;
+            item.textEdit.range.end.line += pos.line;
+        })
+        return result;
     }
 }

@@ -1,4 +1,4 @@
-import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight, FormattingOptions, TextEdit } from "vscode-languageserver-protocol/node";
+import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight, FormattingOptions, TextEdit, ColorPresentation, ColorInformation, Color } from "vscode-languageserver-protocol/node";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { Definition, SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
 import { ISemanticTokenData } from "../interfaces";
@@ -59,6 +59,12 @@ export abstract class MahalLang {
         return null;
     }
     getDocumentSymbols(doc: MahalDoc): SymbolInformation[] {
+        return [];
+    }
+    getColors(doc: MahalDoc): ColorInformation[] {
+        return [];
+    }
+    getColorPresentation(document: MahalDoc, color: Color, range: Range): ColorPresentation[] {
         return [];
     }
     getDocumentHighlight(document: MahalDoc, position: Position): DocumentHighlight[] {

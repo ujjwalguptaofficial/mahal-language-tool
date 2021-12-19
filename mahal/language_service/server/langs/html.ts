@@ -1,5 +1,5 @@
 import { doComplete } from "vscode-emmet-helper";
-import { CompletionItem, CompletionList, DocumentHighlight, FormattingOptions, InsertReplaceEdit, LanguageService, Range, SymbolInformation, TextDocument, TextEdit } from "vscode-html-languageservice";
+import { ColorPresentation, CompletionItem, CompletionList, DocumentHighlight, FormattingOptions, InsertReplaceEdit, LanguageService, Range, SymbolInformation, TextDocument, TextEdit } from "vscode-html-languageservice";
 import { Position } from "vscode-languageserver-textdocument";
 import { MahalLang } from "../abstracts";
 import { ISemanticTokenData } from "../interfaces";

@@ -84,6 +84,7 @@ connection.onInitialize((params) => {
             signatureHelpProvider: {
                 triggerCharacters: ['(', ',']
             },
+            colorProvider: true,
             // workspaceSymbolProvider: true,
             // implementationProvider: true,
             // typeDefinitionProvider: true,
@@ -137,6 +138,13 @@ connection.onDefinition((params) => {
 
 connection.onDocumentFormatting(params => {
     return langManager.format(params);
+})
+
+connection.onDocumentColor(params => {
+    return langManager.getColors(params);
+})
+connection.onColorPresentation(params => {
+    return langManager.getColorPresentation(params);
 })
 
 

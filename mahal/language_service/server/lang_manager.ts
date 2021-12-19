@@ -1,6 +1,10 @@
 import { getLanguageService } from 'vscode-html-languageservice';
 import {
+    ColorInformation,
+    ColorPresentation,
+    ColorPresentationParams,
     CompletionItem, Connection, DefinitionParams,
+    DocumentColorParams,
     DocumentFormattingParams,
     DocumentHighlightParams, DocumentSymbolParams, InitializeParams,
     Position, ReferenceParams, SemanticTokensBuilder, SemanticTokensParams,
@@ -221,6 +225,38 @@ export class LangManager {
             );
         }
 
+    }
+
+    getColors(params: DocumentColorParams) {
+        const uri = params.textDocument.uri;
+        const langs = this.eachLang(uri);
+        const document = langs.next().value as MahalDoc;
+        var lang = langs.next()
+        let colors: ColorInformation[] = [];
+        while (!lang.done) {
+            colors = colors.concat(
+                (lang.value as MahalLang).
+                    getColors(document)
+            )
+            lang = langs.next();
+        }
+        return colors;
+    }
+
+    getColorPresentation(params: ColorPresentationParams) {
+        const uri = params.textDocument.uri;
+        const langs = this.eachLang(uri);
+        const document = langs.next().value as MahalDoc;
+        var lang = langs.next()
+        let colors: ColorPresentation[] = [];
+        while (!lang.done) {
+            colors = colors.concat(
+                (lang.value as MahalLang).
+                    getColorPresentation(document, params.color, params.range)
+            )
+            lang = langs.next();
+        }
+        return colors;
     }
 
     format(params: DocumentFormattingParams) {
