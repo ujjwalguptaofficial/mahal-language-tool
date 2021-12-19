@@ -6,6 +6,7 @@ import { ISemanticTokenData } from "../interfaces";
 import { DocManager } from "../managers";
 import { MahalDoc } from "../models";
 import { JsLang } from "../langs/js";
+import { format } from "prettier";
 
 export class HtmlLang extends MahalLang {
 
@@ -103,33 +104,64 @@ export class HtmlLang extends MahalLang {
         )
     }
 
-    format(doc: MahalDoc, formatParams: FormattingOptions) {
+    format(document: MahalDoc, formatParams: FormattingOptions) {
         // const uri = doc.uri;
         const editorConfig = this.docManager.editorConfig;
-        const format = this.docManager.editorConfig.script.format;
-        if (!format.enable) {
+        const formatConfig = this.docManager.editorConfig.script.format;
+        if (!formatConfig.enable) {
             return [];
         }
 
-        const region = this.getRegion(doc);
+        const { doc } = this.getDoc(document);
+        const region = this.getRegion(document);
         if (!region) {
             return [];
         }
+
+        // const formattedString = format(doc.getText(), {
+        //     parser: "html",
+        //     tabWidth: editorConfig.tabSize
+        // });
+        // const range = {
+        //     start: document.positionAt(region.start + 1),
+        //     end: document.positionAt(region.end)
+        // }
+        // return [
+        //     TextEdit.replace(range, formattedString)
+        // ];
+
         const range = {
-            start: doc.positionAt(region.start + 1),
-            end: doc.positionAt(region.end - 1)
+            start: doc.positionAt(0),
+            end: doc.positionAt(region.end - region.start)
         }
+
+        console.log('range', range);
+        console.log('text', `"${doc.getText()}"`);
 
         // const fileFsPath = this.getFileName(uri);
         // const region = this.getRegion(doc);
-        return this.langService.format(
-            doc.textDoc,
+        const results = this.langService.format(
+            doc,
             range,
             {
                 tabSize: editorConfig.tabSize,
                 preserveNewLines: true,
-                indentEmptyLines: false,
+                indentEmptyLines: true,
             }
-        )
+        );
+        const startPos = document.positionAt(region.start + 1);
+        const endPos = document.positionAt(region.end);
+
+        console.log('startPOS', startPos, 'endPOS', endPos);
+
+        results.forEach(item => {
+            console.log("item", item);
+            item.range.start.line = startPos.line;
+            item.range.end.line = endPos.line;
+            item.newText = item.newText + "\n";
+            // console.log("item range", item);
+        })
+        console.log('results', results.length, results[0]);
+        return results;
     }
 }

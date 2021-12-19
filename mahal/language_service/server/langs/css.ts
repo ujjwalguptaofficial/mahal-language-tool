@@ -102,6 +102,9 @@ export class CssLang extends MahalLang {
     getColors(document: MahalDoc) {
         const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
+        if (!region) {
+            return [];
+        }
         // console.log("getColors", doc.getText());
         const result = this.langService.findDocumentColors(
             doc,
