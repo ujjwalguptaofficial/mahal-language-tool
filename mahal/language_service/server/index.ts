@@ -5,7 +5,7 @@ import { LangManager } from "./lang_manager";
 
 
 let connection = createConnection(ProposedFeatures.all);
-let langManager = new LangManager();
+let langManager = new LangManager(connection);
 export function getSemanticTokenLegends(): SemanticTokensLegend {
     const tokenModifiers: string[] = [];
 
@@ -47,8 +47,8 @@ export function getSemanticTokenLegends(): SemanticTokensLegend {
 }
 
 connection.onInitialize((params) => {
-    console.log("init option", params.initializationOptions.clientConfig);
-    langManager.listen(connection, params);
+    // console.log("init option", params.initializationOptions.clientConfig);
+    langManager.listen(params);
 
     return {
         capabilities: {
@@ -146,6 +146,7 @@ connection.onDocumentColor(params => {
 connection.onColorPresentation(params => {
     return langManager.getColorPresentation(params);
 })
+
 
 
 // connection.languages.

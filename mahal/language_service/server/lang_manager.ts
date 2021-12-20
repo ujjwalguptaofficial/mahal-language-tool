@@ -4,6 +4,9 @@ import {
     ColorPresentation,
     ColorPresentationParams,
     CompletionItem, Connection, DefinitionParams,
+    Diagnostic,
+    DidChangeTextDocumentParams,
+    DidOpenTextDocumentParams,
     DocumentColorParams,
     DocumentFormattingParams,
     DocumentHighlightParams, DocumentSymbolParams, InitializeParams,
@@ -26,7 +29,12 @@ export class LangManager {
 
     docManager: DocManager;
 
-    listen(connection: Connection, params: InitializeParams) {
+    constructor(public connection: Connection) {
+
+    }
+
+    listen(params: InitializeParams) {
+        const connection = this.connection;
         const htmlService = getLanguageService();
 
 
@@ -42,12 +50,14 @@ export class LangManager {
         ).getLangService();
 
 
-        connection.onDidOpenTextDocument(
-            docManager.onOpenTextDocument.bind(docManager)
-        );
-        connection.onDidChangeTextDocument(
-            docManager.didChangeTextDocument.bind(docManager)
-        );
+        connection.onDidOpenTextDocument((params: DidOpenTextDocumentParams) => {
+            docManager.onOpenTextDocument(params)
+            this.onFileChange(params.textDocument.uri);
+        });
+        connection.onDidChangeTextDocument((params: DidChangeTextDocumentParams) => {
+            docManager.didChangeTextDocument(params);
+            this.onFileChange(params.textDocument.uri);
+        });
 
         connection.onDidSaveTextDocument(
             docManager.didSaveTextDocument.bind(docManager)
@@ -73,6 +83,39 @@ export class LangManager {
         // const config =
         //     console.log("config", config);
     }
+
+    fileChangeTimer: NodeJS.Timeout;
+
+    onFileChange(uri: string) {
+        if (this.fileChangeTimer) {
+            clearTimeout(this.fileChangeTimer);
+        }
+        this.fileChangeTimer = setTimeout(() => {
+            this.validate(uri);
+        }, 200);
+    }
+
+    validate(uri: string) {
+        const langs = this.eachLang(uri);
+        const document = langs.next().value as MahalDoc;
+        var lang = langs.next()
+        let diagnostics: Diagnostic[] = [];
+        while (!lang.done) {
+            diagnostics = diagnostics.concat(
+                (lang.value as MahalLang).
+                    validate(document)
+            )
+            lang = langs.next();
+        }
+
+        this.connection.sendDiagnostics({
+            diagnostics: diagnostics,
+            uri: document.uri
+        })
+        return diagnostics;
+    }
+
+
 
     getByURI(uri: string) {
         const document = this.docManager.getByURI(
@@ -153,6 +196,7 @@ export class LangManager {
 
     *eachLang(uri: string) {
         const document = this.getByURI(uri);
+        // first return document
         yield document;
         for (const languageId in this.langs) {
             const lang = this.langs[languageId];

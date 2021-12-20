@@ -1,10 +1,10 @@
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
-import { CompletionEntry, Node, CompletionsTriggerCharacter, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression, IndentStyle } from "typescript";
+import { CompletionEntry, Node, CompletionsTriggerCharacter, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression, IndentStyle, CancellationToken, flattenDiagnosticMessageText } from "typescript";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition, FormattingOptions, TextEdit } from "vscode-languageserver/node";
+import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition, FormattingOptions, TextEdit, DiagnosticTag, Diagnostic } from "vscode-languageserver/node";
 import * as Previewer from '../utils/previewer';
-import { getURLFromPath, isMahalFile, toSymbolKind } from "../utils";
+import { fromTsDiagnosticCategoryToDiagnosticSeverity, getURLFromPath, isMahalFile, toSymbolKind } from "../utils";
 import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../constants";
 import { ISemanticTokenOffsetData } from "../interfaces";
 import { MahalDoc } from "../models";
@@ -106,6 +106,55 @@ export class JsLang extends MahalLang {
         // console.log("items", items.map(item => item.label));
         return CompletionList.create(items, items.length <= 0);
 
+    }
+
+    validate(document: MahalDoc, cancellationToken?: CancellationToken) {
+        const uri = document.uri;
+
+        const fileFsPath = this.getFileName(uri)
+        const program = this.langService.getProgram();
+        const sourceFile = program?.getSourceFile(fileFsPath);
+        if (!program || !sourceFile) {
+            return [];
+        }
+
+        const region = this.getRegion(document);
+
+        let rawScriptDiagnostics = [
+            ...program.getSyntacticDiagnostics(sourceFile, cancellationToken),
+            ...program.getSemanticDiagnostics(sourceFile, cancellationToken),
+            ...this.langService.getSuggestionDiagnostics(fileFsPath)
+        ];
+
+        const compilerOptions = program.getCompilerOptions();
+        if (compilerOptions.declaration || compilerOptions.composite) {
+            rawScriptDiagnostics = [
+                ...rawScriptDiagnostics,
+                ...program.getDeclarationDiagnostics(sourceFile, cancellationToken)
+            ];
+        }
+
+        return rawScriptDiagnostics.map(diag => {
+            const tags: DiagnosticTag[] = [];
+
+            if (diag.reportsUnnecessary) {
+                tags.push(DiagnosticTag.Unnecessary);
+            }
+            if (diag.reportsDeprecated) {
+                tags.push(DiagnosticTag.Deprecated);
+            }
+
+            // syntactic/semantic diagnostic always has start and length
+            // so we can safely cast diag to TextSpan
+            return <Diagnostic>{
+                range: convertRange(document, diag as TextSpan, region.start),
+                severity: fromTsDiagnosticCategoryToDiagnosticSeverity(diag.category),
+                message: flattenDiagnosticMessageText(diag.messageText, '\n'),
+                tags,
+                code: diag.code,
+                source: 'Mahal-language-tools'
+            };
+        });
     }
 
 
@@ -619,7 +668,7 @@ function getSourceDoc(fileName: string, program: Program): TextDocument {
     return TextDocument.create(fileName, 'mahal', 0, sourceFile.getFullText());
 }
 
-function convertRange(document: TextDocument, span: TextSpan, relativeStart = 0): Range {
+function convertRange(document: TextDocument | MahalDoc, span: TextSpan, relativeStart = 0): Range {
     const start = span.start + relativeStart;
     const startPosition = document.positionAt(start);
     const endPosition = document.positionAt(start + span.length);

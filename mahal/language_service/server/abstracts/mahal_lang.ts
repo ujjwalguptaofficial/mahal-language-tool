@@ -1,4 +1,4 @@
-import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight, FormattingOptions, TextEdit, ColorPresentation, ColorInformation, Color } from "vscode-languageserver-protocol/node";
+import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight, FormattingOptions, TextEdit, ColorPresentation, ColorInformation, Color, Diagnostic } from "vscode-languageserver-protocol/node";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { Definition, SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
 import { ISemanticTokenData } from "../interfaces";
@@ -13,6 +13,10 @@ export abstract class MahalLang {
         protected docManager: DocManager
     ) {
 
+    }
+
+    validate(document: MahalDoc, cancellationToken?: any): Diagnostic[] {
+        return []
     }
 
     protected setRelativeRange(range: Range, position: Position) {
