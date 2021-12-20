@@ -1,4 +1,4 @@
-import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode, resolveModuleName, Extension, ModuleResolutionHost, ModuleResolutionKind } from "typescript";
+import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode, resolveModuleName, Extension, ModuleResolutionHost, ModuleResolutionKind, createModuleResolutionCache } from "typescript";
 import { InitializeParams } from "vscode-languageserver/node";
 import { DocManager } from "../managers";
 import { getCompilationSetting, getURLFromPath, getFilePathFromURL } from "../utils";
@@ -75,6 +75,9 @@ export class TypeScriptService {
     private createHost_() {
         // const getFileName = this.getFileName;
         const docManager = this.docManager;
+        const moduleResolutionCache = createModuleResolutionCache(this.workSpaceDir, (s) => {
+            return s.toLowerCase();
+        }, this.tsConfig);
         const host: LanguageServiceHost = {
             getCompilationSettings: () => {
                 return this.tsConfig;
@@ -161,7 +164,8 @@ export class TypeScriptService {
                         moduleName,
                         getFilePathFromURL(containingFile),
                         this.tsConfig,
-                        moduleHost
+                        moduleHost,
+                        moduleResolutionCache
                     );
                     // return null;
                     // console.log("item", item);
