@@ -161,8 +161,9 @@ export class CssLang extends MahalLang {
         // console.log("getColorPresentation", result.length);
         const pos = document.positionAt(region.start);
         result.forEach(item => {
-            item.textEdit.range.start.line += pos.line;
-            item.textEdit.range.end.line += pos.line;
+            const range = item.textEdit.range
+            range.start.line += pos.line;
+            range.end.line += pos.line;
         })
         return result;
     }

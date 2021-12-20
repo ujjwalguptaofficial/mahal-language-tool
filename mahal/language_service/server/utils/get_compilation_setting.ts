@@ -14,6 +14,12 @@ export const getCompilationSetting = (tsConfig: CompilerOptions) => {
 
     };
 
+    defaultCompilerOptions.lib.forEach(item => {
+        if (!tsConfig.lib.includes(item)) {
+            tsConfig.lib.push(item);
+        }
+    })
+
     tsConfig.moduleResolution = getModuleResolutionKind(tsConfig.moduleResolution as any);
 
     return {
