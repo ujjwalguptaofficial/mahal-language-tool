@@ -356,6 +356,19 @@ function scanRegion(tagName: string, scanner: Scanner, text: string): EmbeddedRe
     // -2 for </
     end = scanner.getTokenOffset() - 2;
 
+    const content = text.substring(start, end);
+
+    // console.log('before', 'start', start, 'end', end);
+    // console.log('beforetext', `"${text.substring(start, end)}"`);
+
+    start += content.length - content.trimStart().length;
+    end -= content.length - content.trimEnd().length;
+
+    // console.log('content length', content.length, "trimEnd", content.trimEnd().length);
+    // console.log('start', start, 'end', end);
+
+    // console.log('text', `"${text.substring(start, end)}"`);
+
     return {
         languageId: tagName,
         start,

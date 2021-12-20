@@ -68,21 +68,34 @@ export class HtmlLang extends MahalLang {
     }
 
     doHover(document: MahalDoc, position: Position) {
-        const doc = document.textDoc;
-        return this.langService.doHover(
+        const { doc, pos } = this.getActualPosition(document, position);
+        const results = this.langService.doHover(
             doc,
-            position,
+            pos,
             this.langService.parseHTMLDocument(doc)
         )
+        if (!results) {
+            return;
+        }
+        const range = results.range;
+        range.start.line = position.line;
+        range.end.line = position.line;
+        return results;
     }
 
     getDocumentHighlight(document: MahalDoc, position: Position): DocumentHighlight[] {
-        const doc = document.textDoc;
-        return this.langService.findDocumentHighlights(
+        const { doc, pos } = this.getActualPosition(document, position);
+        const results = this.langService.findDocumentHighlights(
             doc,
-            position,
+            pos,
             this.langService.parseHTMLDocument(doc)
-        )
+        );
+        results.forEach(item => {
+            const range = item.range
+            range.start.line = position.line;
+            range.end.line = position.line;
+        })
+        return results;
     }
 
     getDocLinks(document: MahalDoc) {
@@ -98,10 +111,18 @@ export class HtmlLang extends MahalLang {
 
     getDocumentSymbols(document: MahalDoc): SymbolInformation[] {
         const { doc } = this.getDoc(document);
-        return this.langService.findDocumentSymbols(
+        const region = this.getRegion(document);
+        const results = this.langService.findDocumentSymbols(
             doc,
             this.langService.parseHTMLDocument(doc)
-        )
+        );
+        const startPos = document.positionAt(region.start);
+        results.forEach(item => {
+            const range = item.location.range;
+            range.start.line += startPos.line;
+            range.end.line += startPos.line;
+        });
+        return results;
     }
 
     format(document: MahalDoc, formatParams: FormattingOptions) {
@@ -117,6 +138,8 @@ export class HtmlLang extends MahalLang {
         if (!region) {
             return [];
         }
+
+        // console.log('doc', `"${doc.getText()}"`);
 
         // const formattedString = format(doc.getText(), {
         //     parser: "html",
@@ -135,6 +158,8 @@ export class HtmlLang extends MahalLang {
             end: doc.positionAt(region.end - region.start)
         }
 
+        // console.log('range', range);
+
         const results = this.langService.format(
             doc,
             range,
@@ -144,16 +169,16 @@ export class HtmlLang extends MahalLang {
                 indentEmptyLines: true,
             }
         );
-        const startPos = document.positionAt(region.start + 1);
-        const endPos = document.positionAt(region.end);
+        const startPos = document.positionAt(region.start);
+        // const endPos = document.positionAt(region.end);
 
         // console.log('startPOS', startPos, 'endPOS', endPos);
 
         results.forEach(item => {
             // console.log("item", item);
-            item.range.start.line = startPos.line;
-            item.range.end.line = endPos.line;
-            item.newText = item.newText + "\n";
+            item.range.start.line += startPos.line;
+            item.range.end.line += startPos.line;
+            // item.newText = item.newText + "\n";
             // console.log("item range", item);
         })
         // console.log('results', results.length, results[0]);
