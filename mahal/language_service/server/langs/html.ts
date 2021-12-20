@@ -47,8 +47,9 @@ export class HtmlLang extends MahalLang {
             results.forEach(item => {
                 if (!item) return;
                 const range = (item.textEdit as TextEdit).range
-                range.start.line = position.line;
-                range.end.line = position.line;
+                this.setRelativeRange(
+                    range, position
+                )
             })
             results = [
                 ...results,
@@ -77,9 +78,9 @@ export class HtmlLang extends MahalLang {
         if (!results) {
             return;
         }
-        const range = results.range;
-        range.start.line = position.line;
-        range.end.line = position.line;
+        this.setRelativeRange(
+            results.range, position
+        );
         return results;
     }
 
@@ -91,9 +92,9 @@ export class HtmlLang extends MahalLang {
             this.langService.parseHTMLDocument(doc)
         );
         results.forEach(item => {
-            const range = item.range
-            range.start.line = position.line;
-            range.end.line = position.line;
+            this.setRelativeRange(
+                item.range, position
+            );
         })
         return results;
     }

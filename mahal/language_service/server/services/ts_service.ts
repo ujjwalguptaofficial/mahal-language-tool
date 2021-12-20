@@ -22,7 +22,7 @@ export class TypeScriptService {
         else {
             this.workSpaceDir = process.cwd()
         }
-        console.log('workSpaceDir', this.workSpaceDir);
+        // console.log('workSpaceDir', this.workSpaceDir);
 
         this.tsConfig = this.getCompilerOptions_();
         // this.registerFileEvents_();
@@ -42,8 +42,8 @@ export class TypeScriptService {
             }
         };
         const tsConfig = getCompilationSetting(tsConfigCompilerOptions);
-        console.log('path', tsConfigPath);
-        console.log('tsconfig', tsConfig);
+        // console.log('path', tsConfigPath);
+        // console.log('tsconfig', tsConfig);
         return tsConfig;
     }
 

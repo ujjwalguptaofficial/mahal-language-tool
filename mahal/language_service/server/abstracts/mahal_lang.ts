@@ -15,6 +15,12 @@ export abstract class MahalLang {
 
     }
 
+    protected setRelativeRange(range: Range, position: Position) {
+        range.start.line = position.line;
+        range.end.line = position.line;
+    }
+
+
     protected getFileName(uri) {
         return getFilePathFromURL(uri);
         // + ".ts";

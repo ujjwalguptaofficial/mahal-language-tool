@@ -17,11 +17,7 @@ export class CssLang extends MahalLang {
 
     id: string = "css";
 
-    setRelativeRange(range: Range, position: Position) {
-        range.start.line = position.line;
-        range.end.line = position.line;
-    }
-
+   
     doComplete(document: MahalDoc, position: Position, jsLang: JsLang): CompletionList | Promise<CompletionList> {
         const { doc, pos } = this.getActualPosition(document, position);
         const result = this.langService.doComplete(
