@@ -17,7 +17,7 @@ export class CssLang extends MahalLang {
 
     id: string = "css";
 
-   
+
     doComplete(document: MahalDoc, position: Position, jsLang: JsLang): CompletionList | Promise<CompletionList> {
         const { doc, pos } = this.getActualPosition(document, position);
         const result = this.langService.doComplete(
@@ -49,12 +49,43 @@ export class CssLang extends MahalLang {
         return result;
     }
 
-    getDocumentSymbols(document: MahalDoc) {
+    validate(document: MahalDoc, cancellationToken?: any) {
         const { doc } = this.getDoc(document);
-        return this.langService.findDocumentSymbols(
+        const region = this.getRegion(document);
+        if (!region) {
+            return [];
+        }
+        const results = this.langService.doValidation(
             doc,
             this.langService.parseStylesheet(doc)
         );
+        const pos = document.positionAt(region.start);
+        results.forEach(item => {
+            const range = item.range
+            range.start.line += pos.line;
+            range.end.line += pos.line;
+        })
+        return results;
+    }
+
+
+    getDocumentSymbols(document: MahalDoc) {
+        const { doc } = this.getDoc(document);
+        const region = this.getRegion(document);
+        if (!region) {
+            return [];
+        }
+        const results = this.langService.findDocumentSymbols(
+            doc,
+            this.langService.parseStylesheet(doc)
+        );
+        const pos = document.positionAt(region.start);
+        results.forEach(item => {
+            const range = item.location.range
+            range.start.line += pos.line;
+            range.end.line += pos.line;
+        })
+        return results;
     }
 
     getDocumentHighlight(document: MahalDoc, position: Position) {
@@ -110,10 +141,9 @@ export class CssLang extends MahalLang {
         // console.log("getColors", result.length);
         const pos = document.positionAt(region.start);
         result.forEach(item => {
-            // console.log("item", item);
-            item.range.start.line += pos.line;
-            item.range.end.line += pos.line;
-            // console.log("item range", item);
+            const range = item.range
+            range.start.line += pos.line;
+            range.end.line += pos.line;
         })
         return result;
     }

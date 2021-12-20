@@ -1,5 +1,5 @@
 import { doComplete } from "vscode-emmet-helper";
-import { ColorPresentation, CompletionItem, CompletionList, DocumentHighlight, FormattingOptions, InsertReplaceEdit, LanguageService, Range, SymbolInformation, TextDocument, TextEdit } from "vscode-html-languageservice";
+import { ColorPresentation, CompletionItem, CompletionList, Diagnostic, DocumentHighlight, FormattingOptions, InsertReplaceEdit, LanguageService, Range, SymbolInformation, TextDocument, TextEdit } from "vscode-html-languageservice";
 import { Position } from "vscode-languageserver-textdocument";
 import { MahalLang } from "../abstracts";
 import { ISemanticTokenData } from "../interfaces";
@@ -126,6 +126,7 @@ export class HtmlLang extends MahalLang {
         return results;
     }
 
+    
     format(document: MahalDoc, formatParams: FormattingOptions) {
         // const uri = doc.uri;
         const editorConfig = this.docManager.editorConfig;
