@@ -30,25 +30,41 @@ export class LangManager {
     docManager: DocManager;
 
     constructor(public connection: Connection) {
-
+        this.initializeLangs();
     }
 
-    listen(params: InitializeParams) {
-        const connection = this.connection;
+    initializeLangs() {
         const htmlService = getLanguageService();
-
-
-
         const docManager = this.docManager = new DocManager(
             htmlService
         );
 
-        docManager.setEditorConfig(params.initializationOptions.clientConfig);
+        this.langs['html'] = new HtmlLang(
+            htmlService, this.docManager
+        );
+        this.langs['css'] = new CssLang(
+            getCSSLanguageService(), this.docManager
+        );
 
+
+    }
+
+    initJsLang(params: InitializeParams) {
         const jsService = new TypeScriptService(params,
-            docManager
+            this.docManager
         ).getLangService();
+        this.langs['javascript'] = new JsLang(
+            jsService, this.docManager
+        );
+    }
 
+    listen(params: InitializeParams) {
+        this.initJsLang(params)
+        const connection = this.connection;
+
+        const docManager = this.docManager;
+
+        docManager.setEditorConfig(params.initializationOptions.clientConfig);
 
         connection.onDidOpenTextDocument((params: DidOpenTextDocumentParams) => {
             docManager.onOpenTextDocument(params)
@@ -70,18 +86,55 @@ export class LangManager {
             docManager.onExternalDocChange.bind(docManager)
         );
 
+        connection.onCompletion((params) => {
+            return this.doComplete(
+                params.textDocument, params.position
+            );
+        });
 
-        this.langs['html'] = new HtmlLang(
-            htmlService, this.docManager
-        );
-        this.langs['css'] = new CssLang(
-            getCSSLanguageService(), this.docManager
-        );
-        this.langs['javascript'] = new JsLang(
-            jsService, this.docManager
-        );
-        // const config =
-        //     console.log("config", config);
+        connection.onHover((params) => {
+            return this.doHover(params.textDocument, params.position)
+        });
+
+
+        connection.onCompletionResolve((params) => {
+            return this.doCompletionResolve(params);
+        });
+
+        connection.onReferences((params) => {
+            return this.getReferences(params);
+        })
+
+        connection.onSignatureHelp((params) => {
+            return this.getSignatureHelp(params);
+        })
+        connection.onDocumentSymbol((params) => {
+            return this.getDocumentSymbols(params);
+        })
+        connection.onDocumentHighlight((params) => {
+            return this.getDocumentHighlight(params);
+        })
+
+        connection.languages.semanticTokens.on((params) => {
+            return this.onSemanticTokens(params);
+        })
+        connection.languages.semanticTokens.onRange((params) => {
+            return this.onSemanticTokens(params);
+        })
+        connection.onDefinition((params) => {
+            return this.getDefinition(params);
+        })
+
+        connection.onDocumentFormatting(params => {
+            return this.format(params);
+        })
+
+        connection.onDocumentColor(params => {
+            return this.getColors(params);
+        })
+        connection.onColorPresentation(params => {
+            return this.getColorPresentation(params);
+        })
     }
 
     fileChangeTimer: NodeJS.Timeout;

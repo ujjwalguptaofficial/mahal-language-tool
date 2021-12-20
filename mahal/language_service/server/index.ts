@@ -93,59 +93,7 @@ connection.onInitialize((params) => {
     }
 });
 
-connection.onCompletion((params) => {
-    try {
-        return langManager.doComplete(
-            params.textDocument, params.position
-        );
-    } catch (error) {
-        console.log("error", error);
-    }
-});
 
-connection.onHover((params) => {
-    return langManager.doHover(params.textDocument, params.position)
-});
-
-
-connection.onCompletionResolve((params) => {
-    return langManager.doCompletionResolve(params);
-});
-
-connection.onReferences((params) => {
-    return langManager.getReferences(params);
-})
-
-connection.onSignatureHelp((params) => {
-    return langManager.getSignatureHelp(params);
-})
-connection.onDocumentSymbol((params) => {
-    return langManager.getDocumentSymbols(params);
-})
-connection.onDocumentHighlight((params) => {
-    return langManager.getDocumentHighlight(params);
-})
-
-connection.languages.semanticTokens.on((params) => {
-    return langManager.onSemanticTokens(params);
-})
-connection.languages.semanticTokens.onRange((params) => {
-    return langManager.onSemanticTokens(params);
-})
-connection.onDefinition((params) => {
-    return langManager.getDefinition(params);
-})
-
-connection.onDocumentFormatting(params => {
-    return langManager.format(params);
-})
-
-connection.onDocumentColor(params => {
-    return langManager.getColors(params);
-})
-connection.onColorPresentation(params => {
-    return langManager.getColorPresentation(params);
-})
 
 
 
