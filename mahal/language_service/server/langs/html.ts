@@ -135,11 +135,6 @@ export class HtmlLang extends MahalLang {
             end: doc.positionAt(region.end - region.start)
         }
 
-        console.log('range', range);
-        console.log('text', `"${doc.getText()}"`);
-
-        // const fileFsPath = this.getFileName(uri);
-        // const region = this.getRegion(doc);
         const results = this.langService.format(
             doc,
             range,
@@ -152,16 +147,16 @@ export class HtmlLang extends MahalLang {
         const startPos = document.positionAt(region.start + 1);
         const endPos = document.positionAt(region.end);
 
-        console.log('startPOS', startPos, 'endPOS', endPos);
+        // console.log('startPOS', startPos, 'endPOS', endPos);
 
         results.forEach(item => {
-            console.log("item", item);
+            // console.log("item", item);
             item.range.start.line = startPos.line;
             item.range.end.line = endPos.line;
             item.newText = item.newText + "\n";
             // console.log("item range", item);
         })
-        console.log('results', results.length, results[0]);
+        // console.log('results', results.length, results[0]);
         return results;
     }
 }

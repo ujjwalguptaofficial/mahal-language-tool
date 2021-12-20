@@ -92,7 +92,8 @@ export class CssLang extends MahalLang {
         });
         const range = {
             start: document.positionAt(region.start + 1),
-            end: document.positionAt(region.end - 1)
+            // end: document.positionAt(region.end - 1)
+            end: document.positionAt(region.end)
         }
         return [
             TextEdit.replace(range, formattedString)
