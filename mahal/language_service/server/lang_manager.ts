@@ -15,7 +15,7 @@ import { ISemanticTokenData } from './interfaces';
 import { CssLang, HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
 import { MahalDoc } from './models';
-import { TypeScriptService, RefTokensService } from './services';
+import { TypeScriptService } from './services';
 import { getCSSLanguageService } from "vscode-css-languageservice";
 
 export class LangManager {
@@ -67,13 +67,9 @@ export class LangManager {
         this.langs['css'] = new CssLang(
             getCSSLanguageService(), this.docManager
         );
-        if (jsService) {
-            const refTokensService = new RefTokensService(connection)
-            this.langs['javascript'] = new JsLang(
-                jsService, this.docManager, refTokensService
-            );
-        }
-
+        this.langs['javascript'] = new JsLang(
+            jsService, this.docManager
+        );
         // const config =
         //     console.log("config", config);
     }

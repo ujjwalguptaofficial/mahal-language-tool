@@ -7,7 +7,6 @@ import * as Previewer from '../utils/previewer';
 import { getURLFromPath, isMahalFile, toSymbolKind } from "../utils";
 import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../constants";
 import { ISemanticTokenOffsetData } from "../interfaces";
-import { RefTokensService } from "../services";
 import { MahalDoc } from "../models";
 
 export class JsLang extends MahalLang {
@@ -18,7 +17,6 @@ export class JsLang extends MahalLang {
     constructor(
         private langService: LanguageService,
         docManager: DocManager,
-        private refTokensService: RefTokensService
     ) {
         super(docManager);
     }
@@ -439,12 +437,13 @@ export class JsLang extends MahalLang {
 
     getSemanticTokens(document: MahalDoc) {
         const uri = document.uri;
+        const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
         // const start = document.offsetAt(range.start) - region.start;
         // const end = document.offsetAt(range.end) - region.start;
         // const offset = document.offsetAt(range.start) - region.start;
 
-        const scriptText = document.getText();
+        const scriptText = doc.getText();
         if (scriptText.length > SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT) {
             return [];
         }
@@ -455,6 +454,7 @@ export class JsLang extends MahalLang {
         //         length: end - start
         //     } as TextSpan
         //     : 
+        // console.log('getSemanticTokens', scriptText);
         const textSpan = {
             start: 0,
             length: scriptText.length
@@ -490,17 +490,17 @@ export class JsLang extends MahalLang {
             });
         }
 
-        const program = this.langService.getProgram();
-        if (program) {
-            const refTokens = addCompositionApiRefTokens(program, fileFsPath, data, this.refTokensService);
-            this.refTokensService.send(
-                uri,
-                refTokens.map(t => Range.create(
-                    document.positionAt(t[0] + region.start),
-                    document.positionAt(t[1] + region.start))
-                )
-            );
-        }
+        // const program = this.langService.getProgram();
+        // if (program) {
+        //     const refTokens = addCompositionApiRefTokens(program, fileFsPath, data, this.refTokensService);
+        //     this.refTokensService.send(
+        //         uri,
+        //         refTokens.map(t => Range.create(
+        //             document.positionAt(t[0] + region.start),
+        //             document.positionAt(t[1] + region.start))
+        //         )
+        //     );
+        // }
 
         return data.map(({ start, ...rest }) => {
             const startPosition = document.positionAt(start + region.start);
@@ -592,58 +592,6 @@ function walk(node: Node, callback: (node: Node) => void) {
         callback(child);
         walk(child, callback);
     });
-}
-
-export function addCompositionApiRefTokens(
-    program: Program,
-    fileFsPath: string,
-    exists: ISemanticTokenOffsetData[],
-    refTokensService: RefTokensService
-): [number, number][] {
-    const sourceFile = program.getSourceFile(fileFsPath);
-
-    if (!sourceFile) {
-        return [];
-    }
-
-    const typeChecker = program.getTypeChecker();
-
-    const tokens: [number, number][] = [];
-    walk(sourceFile, node => {
-        if (!isIdentifier(node) || node.text !== 'value' || !isPropertyAccessExpression(node.parent)) {
-            return;
-        }
-        const propertyAccess = node.parent;
-
-        let parentSymbol = typeChecker.getTypeAtLocation(propertyAccess.expression).symbol;
-
-        if (parentSymbol.flags & SymbolFlags.Alias) {
-            parentSymbol = typeChecker.getAliasedSymbol(parentSymbol);
-        }
-
-        if (parentSymbol.name !== 'Ref') {
-            return;
-        }
-
-        const start = node.getStart();
-        const length = node.getWidth();
-        tokens.push([start, start + length]);
-        const exist = exists.find(token => token.start === start && token.length === length);
-        const encodedModifier = 1 << TokenModifier.refValue;
-
-        if (exist) {
-            exist.modifierSet |= encodedModifier;
-        } else {
-            exists.push({
-                classificationType: TokenType.property,
-                length: node.getEnd() - node.getStart(),
-                modifierSet: encodedModifier,
-                start: node.getStart()
-            });
-        }
-    });
-
-    return tokens;
 }
 
 export function getTokenModifierFromClassification(tsClassification: number) {
