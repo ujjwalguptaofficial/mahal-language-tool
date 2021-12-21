@@ -1,24 +1,47 @@
-import { MahalLang } from "../abstracts";
-import { DocManager } from "../managers";
-import { CompletionEntry, Node, CompletionsTriggerCharacter, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression, IndentStyle, CancellationToken, flattenDiagnosticMessageText } from "typescript";
+import { CompletionEntry, Node, CompletionsTriggerCharacter, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression, IndentStyle, CancellationToken, flattenDiagnosticMessageText, getSupportedCodeFixes, FileTextChanges, UserPreferences, FormatCodeSettings } from "typescript";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition, FormattingOptions, TextEdit, DiagnosticTag, Diagnostic } from "vscode-languageserver/node";
-import * as Previewer from '../utils/previewer';
-import { fromTsDiagnosticCategoryToDiagnosticSeverity, getURLFromPath, isMahalFile, toSymbolKind } from "../utils";
-import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../constants";
-import { ISemanticTokenOffsetData } from "../interfaces";
-import { MahalDoc } from "../models";
+import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition, FormattingOptions, TextEdit, DiagnosticTag, Diagnostic, CodeActionContext, CodeAction, CodeActionKind } from "vscode-languageserver/node";
+import * as Previewer from '../../utils/previewer';
+import { fromTsDiagnosticCategoryToDiagnosticSeverity, getURLFromPath, isMahalFile, toSymbolKind } from "../../utils";
+import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../../constants";
+import { CodeActionData, CodeActionDataKind, ISemanticTokenOffsetData, RefactorActionData } from "../../interfaces";
+import { MahalDoc } from "../../models";
+import { LanguageId } from "../../types";
+import { getCodeActionKind } from "./code_action_kind_converter";
+import { MahalLang } from "../../abstracts";
+import { DocManager } from "../../managers";
+import { getRefactorFix } from "./get_refactor_fix";
+import { getOrganizeImportFix } from "./get_organize_import_fix";
 
 export class JsLang extends MahalLang {
-    readonly id = 'javascript';
+    readonly id: LanguageId = 'javascript';
 
     symbolsCacheForHTML: SymbolInformation[] = [];
 
+    supportedCodeFixCodes: Set<number>;
+
+    preferences: UserPreferences = {
+        includeCompletionsForImportStatements: true,
+        includePackageJsonAutoImports: "on"
+    };
+
+    formatOptions: FormatCodeSettings;
+
     constructor(
-        private langService: LanguageService,
+        public langService: LanguageService,
         docManager: DocManager,
     ) {
         super(docManager);
+        this.supportedCodeFixCodes = new Set(
+            getSupportedCodeFixes().map(Number).filter(x => !isNaN(x))
+        );
+        const editorConfig = this.docManager.editorConfig;
+        this.formatOptions = {
+            tabSize: editorConfig.tabSize,
+            indentSize: editorConfig.indentSize,
+            convertTabsToSpaces: editorConfig.script.format.convertTabsToSpaces,
+            insertSpaceAfterCommaDelimiter: true
+        }
     }
 
     doComplete(document: MahalDoc, position: Position) {
@@ -157,6 +180,106 @@ export class JsLang extends MahalLang {
         });
     }
 
+    getCodeAction(document: MahalDoc, range: Range, context: CodeActionContext) {
+        const uri = document.uri;
+        const fileFsPath = this.getFileName(uri);
+        const region = this.getRegion(document);
+
+        let start = document.offsetAt(range.start)
+        let end = document.offsetAt(range.end);
+
+        start = start - region.start;
+        end = end - region.start;
+
+        const fixableDiagnosticCodes = context.diagnostics.map(d => Number(d.code)).filter(c =>
+            this.supportedCodeFixCodes.has(c)
+        );
+        let results: CodeAction[] = [];
+        const textRange = { pos: start, end };
+
+        if (fixableDiagnosticCodes.length > 0) {
+            const codeFixes = this.langService.getCodeFixesAtPosition(
+                fileFsPath, start, end,
+                fixableDiagnosticCodes,
+                this.formatOptions,
+                this.preferences
+            );
+
+            codeFixes.forEach(fix => {
+                results.push({
+                    title: fix.description,
+                    kind: CodeActionKind.QuickFix,
+                    diagnostics: context.diagnostics,
+                    edit: {
+                        changes: createUriMappingForEdits(fix.changes, this.langService)
+                    }
+                });
+                if (fix.fixAllDescription && fix.fixId) {
+                    results.push({
+                        title: fix.fixAllDescription,
+                        kind: CodeActionKind.QuickFix,
+                        diagnostics: context.diagnostics,
+                        data: {
+                            uri,
+                            languageId: this.id,
+                            kind: CodeActionDataKind.CombinedCodeFix,
+                            textRange,
+                            fixId: fix.fixId,
+                            position: range.start
+                        } as CodeActionData
+                    });
+                }
+            })
+        }
+
+        results = [
+            ...results,
+            ...getRefactorFix(this, uri, fileFsPath, textRange, context),
+            ...getOrganizeImportFix(this, uri, textRange, context)
+        ]
+
+        return results;
+    }
+
+    getCodeActionResolve(doc: MahalDoc, action: CodeAction) {
+
+        const formatSettings = this.formatOptions
+        const preferences = this.preferences;
+
+        const fileFsPath = this.getFileName(doc.uri);
+        const data = action.data as CodeActionData;
+
+        if (data.kind === CodeActionDataKind.CombinedCodeFix) {
+            const combinedFix = this.langService.getCombinedCodeFix(
+                { type: 'file', fileName: fileFsPath },
+                data.fixId,
+                formatSettings,
+                preferences
+            );
+
+            action.edit = { changes: createUriMappingForEdits(combinedFix.changes.slice(), this.langService) };
+        }
+        if (data.kind === CodeActionDataKind.RefactorAction) {
+            const refactor = this.langService.getEditsForRefactor(
+                fileFsPath,
+                formatSettings,
+                data.textRange,
+                data.refactorName,
+                data.actionName,
+                preferences
+            );
+            if (refactor) {
+                action.edit = { changes: createUriMappingForEdits(refactor.edits, this.langService) };
+            }
+        }
+        if (data.kind === CodeActionDataKind.OrganizeImports) {
+            const response = this.langService.organizeImports({ type: 'file', fileName: fileFsPath }, formatSettings, preferences);
+            action.edit = { changes: createUriMappingForEdits(response.slice(), this.langService) };
+        }
+
+        delete action.data;
+        return action;
+    }
 
     doHover(document: MahalDoc, position: Position) {
         const uri = document.uri;
@@ -634,6 +757,25 @@ export class JsLang extends MahalLang {
             } as TextEdit
         })
     }
+}
+
+function createUriMappingForEdits(changes: FileTextChanges[], service: LanguageService) {
+    const program = service.getProgram()!;
+    const result: Record<string, TextEdit[]> = {};
+    for (const { fileName, textChanges } of changes) {
+        const targetDoc = getSourceDoc(fileName, program);
+        const edits = textChanges.map(({ newText, span }) => ({
+            newText,
+            range: convertRange(targetDoc, span)
+        }));
+        const uri = getURLFromPath(fileName);
+        if (result[uri]) {
+            result[uri].push(...edits);
+        } else {
+            result[uri] = edits;
+        }
+    }
+    return result;
 }
 
 function walk(node: Node, callback: (node: Node) => void) {

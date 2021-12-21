@@ -1,5 +1,7 @@
 import { getLanguageService } from 'vscode-html-languageservice';
 import {
+    CodeAction,
+    CodeActionParams,
     ColorInformation,
     ColorPresentation,
     ColorPresentationParams,
@@ -14,7 +16,7 @@ import {
     SignatureHelpParams, SymbolInformation, TextDocumentIdentifier, TextEdit,
 } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
-import { ISemanticTokenData } from './interfaces';
+import { CodeActionData, ISemanticTokenData } from './interfaces';
 import { CssLang, HtmlLang, JsLang } from './langs';
 import { DocManager } from './managers';
 import { MahalDoc } from './models';
@@ -59,12 +61,12 @@ export class LangManager {
     }
 
     listen(params: InitializeParams) {
-        this.initJsLang(params)
         const connection = this.connection;
 
         const docManager = this.docManager;
 
         docManager.setEditorConfig(params.initializationOptions.clientConfig);
+        this.initJsLang(params);
 
         connection.onDidOpenTextDocument((params: DidOpenTextDocumentParams) => {
             docManager.onOpenTextDocument(params)
@@ -135,6 +137,13 @@ export class LangManager {
         connection.onColorPresentation(params => {
             return this.getColorPresentation(params);
         })
+
+        connection.onCodeAction((params: CodeActionParams) => {
+            return this.getCodeActions(params);
+        })
+        connection.onCodeActionResolve((params: CodeAction) => {
+            return this.getCodeActionResolve(params);
+        })
     }
 
     fileChangeTimer: NodeJS.Timeout;
@@ -201,6 +210,29 @@ export class LangManager {
         );
         if (activeLang) {
             return activeLang.doComplete(document, position, this.langs['javascript'] as any);
+        }
+    }
+
+    getCodeActions(params: CodeActionParams) {
+        const { activeLang, document } = this.getActiveLang(
+            params.textDocument.uri, params.range.start
+        );
+        if (activeLang) {
+            return activeLang.getCodeAction(
+                document, params.range, params.context
+            );
+        }
+    }
+
+    getCodeActionResolve(params: CodeAction) {
+        const data = params.data as CodeActionData;
+        const { activeLang, document } = this.getActiveLang(
+            data.uri, data.position
+        );
+        if (activeLang) {
+            return activeLang.getCodeActionResolve(
+                document, params
+            );
         }
     }
 

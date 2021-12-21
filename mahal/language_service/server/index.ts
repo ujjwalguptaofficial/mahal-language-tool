@@ -1,4 +1,4 @@
-import { createConnection, ProposedFeatures, SemanticTokenModifiers, SemanticTokensLegend, SemanticTokenTypes, TextDocumentSyncKind } from "vscode-languageserver/node";
+import { CodeActionKind, createConnection, ProposedFeatures, SemanticTokenModifiers, SemanticTokensLegend, SemanticTokenTypes, TextDocumentSyncKind } from "vscode-languageserver/node";
 import { TokenModifier, TokenType } from "./constants";
 import { LangManager } from "./lang_manager";
 
@@ -78,6 +78,18 @@ connection.onInitialize((params) => {
             //         // Commands.APPLY_RENAME_FILE
             //     ]
             // },
+            codeActionProvider: {
+                codeActionKinds: [
+                    CodeActionKind.QuickFix,
+                    CodeActionKind.Refactor,
+                    CodeActionKind.RefactorExtract,
+                    CodeActionKind.RefactorInline,
+                    CodeActionKind.RefactorRewrite,
+                    CodeActionKind.Source,
+                    CodeActionKind.SourceOrganizeImports
+                ],
+                resolveProvider: true
+            },
             hoverProvider: true,
             // renameProvider: true,
             referencesProvider: true,

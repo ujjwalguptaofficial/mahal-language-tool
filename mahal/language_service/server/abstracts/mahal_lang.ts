@@ -1,6 +1,6 @@
-import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight, FormattingOptions, TextEdit, ColorPresentation, ColorInformation, Color, Diagnostic } from "vscode-languageserver-protocol/node";
+import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight, FormattingOptions, TextEdit, ColorPresentation, ColorInformation, Color, Diagnostic, CodeAction, Command } from "vscode-languageserver-protocol/node";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
-import { Definition, SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
+import { CodeActionContext, Definition, SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
 import { ISemanticTokenData } from "../interfaces";
 import { JsLang } from "../langs";
 import { DocManager } from "../managers";
@@ -17,6 +17,10 @@ export abstract class MahalLang {
 
     validate(document: MahalDoc, cancellationToken?: any): Diagnostic[] {
         return []
+    }
+
+    getCodeActionResolve(doc: MahalDoc, action: CodeAction): CodeAction {
+        return null;
     }
 
     protected setRelativeRange(range: Range, position: Position) {
@@ -84,6 +88,10 @@ export abstract class MahalLang {
         return [];
     }
     format(doc: MahalDoc, formatParams: FormattingOptions): TextEdit[] {
+        return [];
+    }
+
+    getCodeAction(document: MahalDoc, range: Range, context: CodeActionContext): (CodeAction | Command)[] {
         return [];
     }
 }
