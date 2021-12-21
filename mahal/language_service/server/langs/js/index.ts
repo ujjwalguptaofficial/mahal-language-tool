@@ -1,17 +1,23 @@
 import { CompletionEntry, Node, CompletionsTriggerCharacter, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression, IndentStyle, CancellationToken, flattenDiagnosticMessageText, getSupportedCodeFixes, FileTextChanges, UserPreferences, FormatCodeSettings } from "typescript";
-import { TextDocument } from "vscode-languageserver-textdocument";
 import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition, FormattingOptions, TextEdit, DiagnosticTag, Diagnostic, CodeActionContext, CodeAction, CodeActionKind } from "vscode-languageserver/node";
 import * as Previewer from '../../utils/previewer';
 import { fromTsDiagnosticCategoryToDiagnosticSeverity, getURLFromPath, isMahalFile, toSymbolKind } from "../../utils";
-import { SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../../constants";
+import { NON_SCRIPT_TRIGGERS, SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../../constants";
 import { CodeActionData, CodeActionDataKind, ISemanticTokenOffsetData, RefactorActionData } from "../../interfaces";
 import { MahalDoc } from "../../models";
 import { LanguageId } from "../../types";
-import { getCodeActionKind } from "./code_action_kind_converter";
 import { MahalLang } from "../../abstracts";
 import { DocManager } from "../../managers";
 import { getRefactorFix } from "./get_refactor_fix";
 import { getOrganizeImportFix } from "./get_organize_import_fix";
+import { convertRange } from "./convert_range";
+import { getSourceDoc } from "./get_source-doc";
+import { createUriMappingForEdits } from "./create_uri_mapping_for_edits";
+import { parseKindModifier } from "./parse_kind_modifier";
+import { toCompletionItemKind } from "./to_completion_item_kind";
+import { getFilterText } from "./get_filter_text";
+import { getLabelAndDetailFromCompletionEntry } from "./get_label_and_detail_from_completion_entry";
+import { getTsTriggerCharacter } from "./get_ts_trigger_character";
 
 export class JsLang extends MahalLang {
     readonly id: LanguageId = 'javascript';
@@ -51,17 +57,16 @@ export class JsLang extends MahalLang {
         // const { doc: savedDoc, regions } = this.getDoc(document);
         const region = this.getRegion(document);//regions[0];
         const offset = document.offsetAt(position) - region.start;
-        const fileText = document.getText();
+        const { doc } = this.getDoc(document);
+        const fileText = doc.getText();
 
         // console.log("saved fileText", fileText.split(""), fileText.length, `'${fileText}'`);
 
         const triggerChar = fileText[offset - 1];
         if (NON_SCRIPT_TRIGGERS.includes(triggerChar)) {
-            console.log("returning empty");
-            return Promise.resolve(
-                CompletionList.create([], false)
-            )
+            return CompletionList.create([], false)
         }
+        // console.log("triggerChar", triggerChar);
         const triggerCharValue = getTsTriggerCharacter(triggerChar);
         // console.log("offset", offset);
 
@@ -662,18 +667,6 @@ export class JsLang extends MahalLang {
             });
         }
 
-        // const program = this.langService.getProgram();
-        // if (program) {
-        //     const refTokens = addCompositionApiRefTokens(program, fileFsPath, data, this.refTokensService);
-        //     this.refTokensService.send(
-        //         uri,
-        //         refTokens.map(t => Range.create(
-        //             document.positionAt(t[0] + region.start),
-        //             document.positionAt(t[1] + region.start))
-        //         )
-        //     );
-        // }
-
         return data.map(({ start, ...rest }) => {
             const startPosition = document.positionAt(start + region.start);
 
@@ -759,31 +752,6 @@ export class JsLang extends MahalLang {
     }
 }
 
-function createUriMappingForEdits(changes: FileTextChanges[], service: LanguageService) {
-    const program = service.getProgram()!;
-    const result: Record<string, TextEdit[]> = {};
-    for (const { fileName, textChanges } of changes) {
-        const targetDoc = getSourceDoc(fileName, program);
-        const edits = textChanges.map(({ newText, span }) => ({
-            newText,
-            range: convertRange(targetDoc, span)
-        }));
-        const uri = getURLFromPath(fileName);
-        if (result[uri]) {
-            result[uri].push(...edits);
-        } else {
-            result[uri] = edits;
-        }
-    }
-    return result;
-}
-
-function walk(node: Node, callback: (node: Node) => void) {
-    node.forEachChild(child => {
-        callback(child);
-        walk(child, callback);
-    });
-}
 
 export function getTokenModifierFromClassification(tsClassification: number) {
     return tsClassification & TokenEncodingConsts.modifierMask;
@@ -794,132 +762,5 @@ export function getTokenTypeFromClassification(tsClassification: number): number
 }
 
 
-function toTextSpan(range: Range, doc: TextDocument): TextSpan {
-    const start = doc.offsetAt(range.start);
-    const end = doc.offsetAt(range.end);
-
-    return {
-        start,
-        length: end - start
-    };
-}
 
 
-function getSourceDoc(fileName: string, program: Program): TextDocument {
-    const sourceFile = program.getSourceFile(fileName)!;
-    return TextDocument.create(fileName, 'mahal', 0, sourceFile.getFullText());
-}
-
-function convertRange(document: TextDocument | MahalDoc, span: TextSpan, relativeStart = 0): Range {
-    const start = span.start + relativeStart;
-    const startPosition = document.positionAt(start);
-    const endPosition = document.positionAt(start + span.length);
-    return Range.create(startPosition, endPosition);
-}
-
-
-function parseKindModifier(kindModifiers: string) {
-    const kinds = new Set(kindModifiers.split(/,|\s+/g));
-
-    return {
-        optional: kinds.has('optional'),
-        deprecated: kinds.has('deprecated'),
-        color: kinds.has('color')
-    };
-}
-
-function getLabelAndDetailFromCompletionEntry(entry: CompletionEntry) {
-    // Is import path completion
-    if (entry.kind === ScriptElementKind.scriptElement) {
-        if (entry.kindModifiers) {
-            return {
-                label: entry.name,
-                detail: entry.name + entry.kindModifiers
-            };
-        } else {
-            const ext = ".mahal";
-            if (entry.name.endsWith(ext)) {
-                return {
-                    label: entry.name.slice(0, -ext.length),
-                    detail: entry.name
-                };
-            }
-        }
-    }
-
-    return {
-        label: entry.name,
-        detail: undefined
-    };
-}
-
-/* tslint:disable:max-line-length */
-/**
- * Adapted from https://github.com/microsoft/vscode/blob/2b090abd0fdab7b21a3eb74be13993ad61897f84/extensions/typescript-language-features/src/languageFeatures/completions.ts#L147-L181
- */
-function getFilterText(insertText: string | undefined): string | undefined {
-    // For `this.` completions, generally don't set the filter text since we don't want them to be overly prioritized. #74164
-    if (insertText?.startsWith('this.')) {
-        return undefined;
-    }
-
-    // Handle the case:
-    // ```
-    // const xyz = { 'ab c': 1 };
-    // xyz.ab|
-    // ```
-    // In which case we want to insert a bracket accessor but should use `.abc` as the filter text instead of
-    // the bracketed insert text.
-    else if (insertText?.startsWith('[')) {
-        return insertText.replace(/^\[['"](.+)[['"]\]$/, '.$1');
-    }
-
-    // In all other cases, fallback to using the insertText
-    return insertText;
-}
-
-export function toCompletionItemKind(kind: ScriptElementKind): CompletionItemKind {
-    switch (kind) {
-        case 'primitive type':
-        case 'keyword':
-            return CompletionItemKind.Keyword;
-        case 'var':
-        case 'local var':
-            return CompletionItemKind.Variable;
-        case 'property':
-        case 'getter':
-        case 'setter':
-            return CompletionItemKind.Field;
-        case 'function':
-        case 'method':
-        case 'construct':
-        case 'call':
-        case 'index':
-            return CompletionItemKind.Function;
-        case 'enum':
-            return CompletionItemKind.Enum;
-        case 'module':
-            return CompletionItemKind.Module;
-        case 'class':
-            return CompletionItemKind.Class;
-        case 'interface':
-            return CompletionItemKind.Interface;
-        case 'warning':
-            return CompletionItemKind.File;
-        case 'script':
-            return CompletionItemKind.File;
-        case 'directory':
-            return CompletionItemKind.Folder;
-    }
-
-    return CompletionItemKind.Property;
-}
-const NON_SCRIPT_TRIGGERS = ['<', '*', ':'];
-
-function getTsTriggerCharacter(triggerChar: string) {
-    const legalChars = ['@', '#', '.', '"', "'", '`', '/', '<'];
-    if (legalChars.includes(triggerChar)) {
-        return triggerChar as CompletionsTriggerCharacter;
-    }
-    return undefined;
-}

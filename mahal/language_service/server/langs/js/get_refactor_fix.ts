@@ -15,7 +15,7 @@ export function getRefactorFix(lang: JsLang, uri: string, fileName: string, text
         lang.preferences,
         !context.only ? undefined : 'invoked'
     );
-    console.log('refactorings', refactorings.length);
+    // console.log('refactorings', refactorings.length);
     for (const refactoring of refactorings) {
         const refactorName = refactoring.name;
         if (refactoring.inlineable) {

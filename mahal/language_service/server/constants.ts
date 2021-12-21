@@ -1,4 +1,5 @@
 export const SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT = 80000;
+export const NON_SCRIPT_TRIGGERS = ['<', '*', ':'];
 export enum TokenEncodingConsts {
     typeOffset = 8,
     modifierMask = (1 << typeOffset) - 1
