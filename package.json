@@ -9,6 +9,9 @@
     "activationEvents": [
         "onLanguage:mahal"
     ],
+    "scripts": {
+        "build": "cd language_service && npm run build"
+    },
     "main": "language_service/dist/client.js",
     "categories": [
         "Programming Languages"
