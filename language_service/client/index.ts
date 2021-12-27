@@ -4,24 +4,26 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { workspace, commands, ExtensionContext, OutputChannel } from 'vscode';
+import { workspace, commands, ExtensionContext, OutputChannel, window } from 'vscode';
 
 import {
     LanguageClient,
     LanguageClientOptions,
     ServerOptions,
-    TransportKind
+    TransportKind,
+
 } from 'vscode-languageclient/node';
+import { appName, appOutputChannel, logger } from './constant';
 
 
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-    console.log("workspace folders", workspace.workspaceFolders, workspace.rootPath);
-    const socketPort = workspace.getConfiguration('languageServerExample').get('port', 7000);
+    logger.log("workspace folders", workspace.workspaceFolders);
+    const socketPort = workspace.getConfiguration(appName).get('port', 7000);
     let socket: WebSocket | null = null;
 
-    commands.registerCommand('languageServerExample.startStreaming', () => {
+    commands.registerCommand(`${appName}.startStreaming`, () => {
         // Establish websocket connection
         socket = new WebSocket(`ws://localhost:${socketPort}`);
     });
@@ -30,7 +32,7 @@ export function activate(context: ExtensionContext) {
     const serverModule = context.asAbsolutePath(
         path.join('language_service', 'dist', 'server.js')
     );
-    console.log('mahal language extension activated', serverModule);
+    logger.log('mahal language extension activated', serverModule);
 
     // The debug options for the server
     // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
@@ -49,28 +51,8 @@ export function activate(context: ExtensionContext) {
             env: {}
         },
     };
-    // The log to send
-    let log = '';
-    const websocketOutputChannel: OutputChannel = {
-        name: 'websocket',
-        // Only append the logs but send them later
-        append(value: string) {
-            log += value;
-            console.log(value);
-        },
-        appendLine(value: string) {
-            log += value;
-            // Don't send logs until WebSocket initialization
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(log);
-            }
-            log = '';
-        },
-        clear() { /* empty */ },
-        show() { /* empty */ },
-        hide() { /* empty */ },
-        dispose() { /* empty */ }
-    };
+
+
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
@@ -92,7 +74,7 @@ export function activate(context: ExtensionContext) {
             fileEvents: workspace.createFileSystemWatcher('{**/*.js,**/*.ts,**/*.json}', false, false, true)
         },
         // Hijacks all LSP logs and redirect them to a specific port through WebSocket connection
-        outputChannel: websocketOutputChannel,
+        outputChannel: appOutputChannel,
         initializationOptions: {
             clientConfig: {
                 script: {

@@ -1,7 +1,7 @@
 {
-    "name": "mahal",
-    "displayName": "mahal",
-    "description": "",
+    "name": "mahal-language-tool",
+    "displayName": "Mahal Language tool",
+    "description": "Support for mahal framework",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.60.0"
@@ -9,8 +9,16 @@
     "activationEvents": [
         "onLanguage:mahal"
     ],
+    "publisher": "ujjwalguptaofficial",
+    "author": {
+        "name": "Ujjwal Gupta",
+        "url": "https://ujjwalguptaofficial.github.io/",
+    },
     "scripts": {
-        "build": "cd language_service && npm run build"
+        "build": "cd language_service && npm run build",
+        "build:pack": "npm run build && npm run pack",
+        "build:install": "npm run build:pack && node build_helper/install_lib.js",
+        "pack": "vsce package"
     },
     "main": "language_service/dist/client.js",
     "categories": [
@@ -42,7 +50,6 @@
                     "mahal"
                 ],
                 "extensions": [
-                    ".mhl",
                     ".mahal"
                 ],
                 "configuration": "./language-configuration.json"
@@ -55,5 +62,9 @@
                 "path": "./syntaxes/mahal.tmLanguage.json"
             }
         ]
+    },
+    "repository": {
+        "url": "https://github.com/ujjwalguptaofficial/mahal-language-tool",
+        "type": "git"
     }
 }

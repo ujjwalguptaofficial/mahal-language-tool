@@ -29,7 +29,6 @@ export const getCompilationSetting = (tsConfig: CompilerOptions) => {
 }
 
 function getModuleResolutionKind(moduleResolution: string) {
-    console.log("getModuleResolutionKind", moduleResolution);
     switch (moduleResolution.toLowerCase()) {
         case "classic":
             return ModuleResolutionKind.Classic;

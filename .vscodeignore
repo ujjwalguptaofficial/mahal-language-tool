@@ -1,0 +1,7 @@
+*.vsix
+node_modules
+# language_service/node_modules
+*.env
+language_service/client
+language_service/server
+webpack
