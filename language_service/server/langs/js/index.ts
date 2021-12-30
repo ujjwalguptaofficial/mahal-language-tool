@@ -216,7 +216,11 @@ export class JsLang extends MahalLang {
                     kind: CodeActionKind.QuickFix,
                     diagnostics: context.diagnostics,
                     edit: {
-                        changes: createUriMappingForEdits(fix.changes, this.langService)
+                        changes: createUriMappingForEdits(
+                            fix.changes,
+                            this,
+                            region.start
+                        )
                     }
                 });
                 if (fix.fixAllDescription && fix.fixId) {
@@ -248,6 +252,8 @@ export class JsLang extends MahalLang {
 
     getCodeActionResolve(doc: MahalDoc, action: CodeAction) {
 
+        console.log("getCodeActionResolve called", action);
+
         const formatSettings = this.formatOptions
         const preferences = this.preferences;
 
@@ -262,7 +268,7 @@ export class JsLang extends MahalLang {
                 preferences
             );
 
-            action.edit = { changes: createUriMappingForEdits(combinedFix.changes.slice(), this.langService) };
+            action.edit = { changes: createUriMappingForEdits(combinedFix.changes.slice(), this) };
         }
         if (data.kind === CodeActionDataKind.RefactorAction) {
             const refactor = this.langService.getEditsForRefactor(
@@ -274,12 +280,12 @@ export class JsLang extends MahalLang {
                 preferences
             );
             if (refactor) {
-                action.edit = { changes: createUriMappingForEdits(refactor.edits, this.langService) };
+                action.edit = { changes: createUriMappingForEdits(refactor.edits, this) };
             }
         }
         if (data.kind === CodeActionDataKind.OrganizeImports) {
             const response = this.langService.organizeImports({ type: 'file', fileName: fileFsPath }, formatSettings, preferences);
-            action.edit = { changes: createUriMappingForEdits(response.slice(), this.langService) };
+            action.edit = { changes: createUriMappingForEdits(response.slice(), this) };
         }
 
         delete action.data;
@@ -463,6 +469,10 @@ export class JsLang extends MahalLang {
         const uri = document.uri;
         const region = this.getRegion(document);
 
+        if (!region) {
+            return [];
+        }
+
         const items = this.langService.getNavigationBarItems(
             this.getFileName(uri)
         );
@@ -541,6 +551,10 @@ export class JsLang extends MahalLang {
     getDocumentSymbols(document: MahalDoc) {
         const uri = document.uri;
         const region = this.getRegion(document);
+
+        if (!region) {
+            return [];
+        }
 
         const items = this.langService.getNavigationBarItems(
             this.getFileName(uri)

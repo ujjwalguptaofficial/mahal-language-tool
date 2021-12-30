@@ -12,7 +12,7 @@
     "publisher": "ujjwalguptaofficial",
     "author": {
         "name": "Ujjwal Gupta",
-        "url": "https://ujjwalguptaofficial.github.io/",
+        "url": "https://ujjwalguptaofficial.github.io/"
     },
     "scripts": {
         "build": "cd language_service && npm run build",

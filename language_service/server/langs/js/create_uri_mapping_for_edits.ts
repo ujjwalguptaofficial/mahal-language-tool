@@ -2,17 +2,19 @@ import { getURLFromPath } from "../../utils";
 import { FileTextChanges, LanguageService } from "typescript";
 import { TextEdit } from "vscode-languageserver/node";
 import { convertRange } from "./convert_range";
-import { getSourceDoc } from "./get_source-doc";
+import { JsLang } from ".";
 
-export function createUriMappingForEdits(changes: FileTextChanges[], service: LanguageService) {
-    const program = service.getProgram()!;
+export function createUriMappingForEdits(changes: FileTextChanges[], service: JsLang, startPosition?: number) {
+    // const program = service.getProgram()!;
     const result: Record<string, TextEdit[]> = {};
     for (const { fileName, textChanges } of changes) {
-        const targetDoc = getSourceDoc(fileName, program);
-        const edits = textChanges.map(({ newText, span }) => ({
-            newText,
-            range: convertRange(targetDoc, span)
-        }));
+        const targetDoc = service.docManager.getByPath(fileName);
+        const edits = textChanges.map(({ newText, span }) => {
+            return {
+                newText,
+                range: convertRange(targetDoc, span, startPosition)
+            }
+        });
         const uri = getURLFromPath(fileName);
         if (result[uri]) {
             result[uri].push(...edits);

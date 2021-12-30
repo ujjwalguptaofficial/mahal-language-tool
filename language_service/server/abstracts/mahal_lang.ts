@@ -10,7 +10,7 @@ import { getFilePathFromURL } from "../utils";
 export abstract class MahalLang {
 
     constructor(
-        protected docManager: DocManager
+        public docManager: DocManager
     ) {
 
     }

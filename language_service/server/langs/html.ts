@@ -113,6 +113,9 @@ export class HtmlLang extends MahalLang {
     getDocumentSymbols(document: MahalDoc): SymbolInformation[] {
         const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
+        if (!region) {
+            return [];
+        }
         const results = this.langService.findDocumentSymbols(
             doc,
             this.langService.parseHTMLDocument(doc)
@@ -126,7 +129,7 @@ export class HtmlLang extends MahalLang {
         return results;
     }
 
-    
+
     format(document: MahalDoc, formatParams: FormattingOptions) {
         // const uri = doc.uri;
         const editorConfig = this.docManager.editorConfig;
