@@ -1,5 +1,5 @@
-import { CodeActionDataKind, OrganizeImportsActionData } from "../../interfaces";
-import { CodeAction, CodeActionContext, CodeActionKind } from "vscode-languageserver/node";
+import { CodeActionDataKind, EmbeddedRegion, OrganizeImportsActionData } from "../../interfaces";
+import { CodeAction, CodeActionContext, CodeActionKind, Position } from "vscode-languageserver/node";
 import { JsLang } from ".";
 
 export function getOrganizeImportFix(
@@ -7,6 +7,8 @@ export function getOrganizeImportFix(
     uri: string,
     textRange: { pos: number; end: number },
     context: CodeActionContext,
+    region: EmbeddedRegion,
+    position: Position
 ) {
     const result: CodeAction[] = [];
 
@@ -27,7 +29,9 @@ export function getOrganizeImportFix(
             uri,
             languageId,
             textRange,
-            kind: CodeActionDataKind.OrganizeImports
+            kind: CodeActionDataKind.OrganizeImports,
+            position,
+            region: region
         } as OrganizeImportsActionData
     });
 

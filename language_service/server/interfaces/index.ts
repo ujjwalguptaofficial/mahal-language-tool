@@ -1,5 +1,6 @@
 import { Position } from "vscode-languageserver/node";
 import { LanguageId } from "../types";
+import { EmbeddedRegion } from "./embedded_region";
 
 export * from "./language_range";
 export * from "./embedded_region";
@@ -16,7 +17,8 @@ export interface BaseCodeActionData {
   languageId: LanguageId;
   kind: CodeActionDataKind;
   textRange: { pos: number; end: number };
-  position?: Position;
+  position: Position;
+  region: EmbeddedRegion
 }
 
 export interface RefactorActionData extends BaseCodeActionData {

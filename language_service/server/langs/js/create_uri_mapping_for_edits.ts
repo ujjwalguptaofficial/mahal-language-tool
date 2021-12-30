@@ -4,7 +4,7 @@ import { TextEdit } from "vscode-languageserver/node";
 import { convertRange } from "./convert_range";
 import { JsLang } from ".";
 
-export function createUriMappingForEdits(changes: FileTextChanges[], service: JsLang, startPosition?: number) {
+export function createUriMappingForEdits(changes: FileTextChanges[], service: JsLang, startPosition: number) {
     // const program = service.getProgram()!;
     const result: Record<string, TextEdit[]> = {};
     for (const { fileName, textChanges } of changes) {

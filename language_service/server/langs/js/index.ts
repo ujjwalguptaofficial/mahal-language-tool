@@ -234,7 +234,8 @@ export class JsLang extends MahalLang {
                             kind: CodeActionDataKind.CombinedCodeFix,
                             textRange,
                             fixId: fix.fixId,
-                            position: range.start
+                            position: range.start,
+                            region: region
                         } as CodeActionData
                     });
                 }
@@ -243,22 +244,20 @@ export class JsLang extends MahalLang {
 
         results = [
             ...results,
-            ...getRefactorFix(this, uri, fileFsPath, textRange, context),
-            ...getOrganizeImportFix(this, uri, textRange, context)
+            ...getRefactorFix(this, uri, fileFsPath, textRange, context, region, range.start),
+            ...getOrganizeImportFix(this, uri, textRange, context, region, range.start)
         ]
 
         return results;
     }
 
     getCodeActionResolve(doc: MahalDoc, action: CodeAction) {
-
-        console.log("getCodeActionResolve called", action);
-
         const formatSettings = this.formatOptions
         const preferences = this.preferences;
 
         const fileFsPath = this.getFileName(doc.uri);
         const data = action.data as CodeActionData;
+        const region = data.region;
 
         if (data.kind === CodeActionDataKind.CombinedCodeFix) {
             const combinedFix = this.langService.getCombinedCodeFix(
@@ -268,7 +267,13 @@ export class JsLang extends MahalLang {
                 preferences
             );
 
-            action.edit = { changes: createUriMappingForEdits(combinedFix.changes.slice(), this) };
+            action.edit = {
+                changes: createUriMappingForEdits(
+                    combinedFix.changes.slice(),
+                    this,
+                    region.start
+                )
+            };
         }
         if (data.kind === CodeActionDataKind.RefactorAction) {
             const refactor = this.langService.getEditsForRefactor(
@@ -280,12 +285,16 @@ export class JsLang extends MahalLang {
                 preferences
             );
             if (refactor) {
-                action.edit = { changes: createUriMappingForEdits(refactor.edits, this) };
+                action.edit = {
+                    changes: createUriMappingForEdits(refactor.edits, this, region.start)
+                };
             }
         }
         if (data.kind === CodeActionDataKind.OrganizeImports) {
             const response = this.langService.organizeImports({ type: 'file', fileName: fileFsPath }, formatSettings, preferences);
-            action.edit = { changes: createUriMappingForEdits(response.slice(), this) };
+            action.edit = {
+                changes: createUriMappingForEdits(response.slice(), this, region.start)
+            };
         }
 
         delete action.data;

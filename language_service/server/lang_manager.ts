@@ -226,6 +226,7 @@ export class LangManager {
 
     getCodeActionResolve(params: CodeAction) {
         const data = params.data as CodeActionData;
+
         const { activeLang, document } = this.getActiveLang(
             data.uri, data.position
         );
