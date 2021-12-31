@@ -1,7 +1,8 @@
-import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode, resolveModuleName, Extension, ModuleResolutionHost, ModuleResolutionKind, createModuleResolutionCache } from "typescript";
+import path from "path";
+import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode, resolveModuleName, Extension, ModuleResolutionHost, ModuleResolutionKind, createModuleResolutionCache, ModuleKind, ResolvedModuleFull } from "typescript";
 import { InitializeParams } from "vscode-languageserver/node";
 import { DocManager } from "../managers";
-import { getCompilationSetting, getURLFromPath, getFilePathFromURL } from "../utils";
+import { getCompilationSetting, getURLFromPath, getFilePathFromURL, isMahalFile } from "../utils";
 
 export class TypeScriptService {
     workSpaceDir: string;
@@ -42,8 +43,8 @@ export class TypeScriptService {
             }
         };
         const tsConfig = getCompilationSetting(tsConfigCompilerOptions);
-        // console.log('path', tsConfigPath);
-        // console.log('tsconfig', tsConfig);
+        console.log('tsConfig path', tsConfigPath);
+        console.log('tsconfig', tsConfig);
         return tsConfig;
     }
 
@@ -150,7 +151,7 @@ export class TypeScriptService {
                 return value;
             },
             resolveModuleNames: (moduleNames: string[], containingFile: string) => {
-
+                // console.log('moduleNames', moduleNames);
                 const moduleHost: ModuleResolutionHost = {
                     fileExists: host.fileExists,
                     directoryExists: host.directoryExists,
@@ -158,14 +159,38 @@ export class TypeScriptService {
                     getCurrentDirectory: host.getCurrentDirectory,
                     getDirectories: host.getDirectories,
                     useCaseSensitiveFileNames: true,
+                    // trace: (s => {
+                    //     console.log('s', s);
+                    // })
                 };
                 return moduleNames.map(moduleName => {
+                    if (isMahalFile(moduleName)) {
+                        const dirName = path.dirname(containingFile);
+                        const absolutePath = path.join(dirName, moduleName);
+                        const moduleCache = moduleResolutionCache.getOrCreateCacheForDirectory(
+                            host.getCurrentDirectory()
+                        )
+                        const key = absolutePath;
+                        if (moduleCache.has(key, undefined)) {
+                            return moduleCache.get(key, undefined).resolvedModule;
+                        }
+
+                        const resolvedModuleFull: ResolvedModuleFull = {
+                            isExternalLibraryImport: false,
+                            extension: '.mahal' as any,
+                            resolvedFileName: absolutePath
+                        }
+                        moduleCache.set(key, undefined, {
+                            resolvedModule: resolvedModuleFull
+                        })
+                        return resolvedModuleFull;
+                    }
                     const item = resolveModuleName(
                         moduleName,
                         getFilePathFromURL(containingFile),
                         this.tsConfig,
                         moduleHost,
-                        moduleResolutionCache
+                        moduleResolutionCache,
                     );
                     // return null;
                     // console.log("item", item);

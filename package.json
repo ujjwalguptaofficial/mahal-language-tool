@@ -16,6 +16,7 @@
     },
     "scripts": {
         "build": "cd language_service && npm run build",
+        "build:server": "cd language_service && npm run build:server",
         "build:pack": "npm run build && npm run pack",
         "build:install": "npm run build:pack && node build_helper/install_lib.js",
         "pack": "vsce package"
