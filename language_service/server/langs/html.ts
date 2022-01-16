@@ -6,7 +6,14 @@ import { ISemanticTokenData } from "../interfaces";
 import { DocManager } from "../managers";
 import { MahalDoc } from "../models";
 import { JsLang } from "../langs/js";
-import { format } from "prettier";
+import { parseview } from "mahal-html-compiler";
+import { DiagnosticSeverity } from "vscode-languageserver/node";
+
+interface IHTMLParseErrorLocation {
+    offset: number,
+    line: number,
+    column: number
+}
 
 export class HtmlLang extends MahalLang {
 
@@ -188,5 +195,31 @@ export class HtmlLang extends MahalLang {
         })
         // console.log('results', results.length, results[0]);
         return results;
+    }
+
+    validate(document: MahalDoc, cancellationToken?: any) {
+        const { doc } = this.getDoc(document);
+        const text = doc.getText();
+        // console.log("html validation", text);
+        try {
+            parseview(text);
+        } catch (error) {
+            const location = error.location as {
+                start: IHTMLParseErrorLocation,
+                end: IHTMLParseErrorLocation
+            };
+            // console.error("error", error);
+            return [Diagnostic.create({
+                start: {
+                    line: location.start.line,
+                    character: location.start.offset
+                },
+                end: {
+                    line: location.end.line,
+                    character: location.end.offset
+                }
+            }, error.message, DiagnosticSeverity.Error)];
+        }
+        return [];
     }
 }

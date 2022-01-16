@@ -44,7 +44,7 @@ export class TypeScriptService {
         };
         const tsConfig = getCompilationSetting(tsConfigCompilerOptions);
         console.log('tsConfig path', tsConfigPath);
-        console.log('tsconfig', tsConfig);
+        // console.log('tsconfig', tsConfig);
         return tsConfig;
     }
 

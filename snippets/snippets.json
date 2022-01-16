@@ -24,5 +24,11 @@
         "body": [
             "<style>\n$0\n</style>\n"
         ]
+    },
+    "folding": {
+        "markers": {
+            "start": "^<(html|style|script)[^>]*>",
+            "end": "^</(html|style|script)>"
+        }
     }
 }

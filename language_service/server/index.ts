@@ -86,7 +86,7 @@ connection.onInitialize((params) => {
                     CodeActionKind.RefactorInline,
                     CodeActionKind.RefactorRewrite,
                     CodeActionKind.Source,
-                    CodeActionKind.SourceOrganizeImports
+                    CodeActionKind.SourceOrganizeImports,
                 ],
                 resolveProvider: true
             },
