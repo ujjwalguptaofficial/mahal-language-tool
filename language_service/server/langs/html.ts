@@ -208,15 +208,15 @@ export class HtmlLang extends MahalLang {
                 start: IHTMLParseErrorLocation,
                 end: IHTMLParseErrorLocation
             };
-            // console.error("error", error);
+            console.error("error", error);
             return [Diagnostic.create({
                 start: {
                     line: location.start.line,
-                    character: location.start.offset
+                    character: location.start.column
                 },
                 end: {
                     line: location.end.line,
-                    character: location.end.offset
+                    character: location.end.column
                 }
             }, error.message, DiagnosticSeverity.Error)];
         }
