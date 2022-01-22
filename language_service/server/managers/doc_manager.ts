@@ -216,7 +216,7 @@ export class DocManager {
             return region.languageId;
         }
         // console.log("regions", regions);
-        return 'unknown';
+        // return 'unknown';
     }
 
 }

@@ -200,6 +200,9 @@ export class HtmlLang extends MahalLang {
     validate(document: MahalDoc, cancellationToken?: any) {
         const { doc } = this.getDoc(document);
         const text = doc.getText();
+        const region = this.getRegion(document);
+        const startPos = document.positionAt(region.start);
+
         // console.log("html validation", text);
         try {
             parseview(text);
@@ -208,15 +211,16 @@ export class HtmlLang extends MahalLang {
                 start: IHTMLParseErrorLocation,
                 end: IHTMLParseErrorLocation
             };
-            console.error("error", error);
+            // console.error("error", error);
+            const line = startPos.line - 1;
             return [Diagnostic.create({
                 start: {
-                    line: location.start.line,
-                    character: location.start.column
+                    line: location.start.line + line,
+                    character: location.start.column + startPos.character
                 },
                 end: {
-                    line: location.end.line,
-                    character: location.end.column
+                    line: location.end.line + line,
+                    character: location.end.column + startPos.character
                 }
             }, error.message, DiagnosticSeverity.Error)];
         }

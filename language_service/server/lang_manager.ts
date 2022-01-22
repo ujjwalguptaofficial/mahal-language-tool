@@ -18,13 +18,14 @@ import {
 } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
 import { CodeActionData, ISemanticTokenData } from './interfaces';
-import { CssLang, HtmlLang, JsLang, ScssLang } from './langs';
+import { CssLang, HtmlLang, JsLang, ScssLang, YmlLang } from './langs';
 import { DocManager } from './managers';
 import { MahalDoc } from './models';
 import { TypeScriptService } from './services';
 import { getCSSLanguageService } from "vscode-css-languageservice";
 import path from 'path';
 import { readFileSync } from 'fs';
+import { basename } from "path";
 
 export class LangManager {
 
@@ -44,17 +45,11 @@ export class LangManager {
 
     constructor(public connection: Connection) {
         this.initializeLangs();
-
-        const serverModule = path.join(__dirname);
-        //  'language_service', 'server', 'snippets');
-
-        console.log('snippets path', serverModule, connection.client);
-
     }
 
     initializeLangs() {
         const htmlService = getLanguageService();
-        const docManager = this.docManager = new DocManager(
+        this.docManager = new DocManager(
             htmlService
         );
 
@@ -66,6 +61,9 @@ export class LangManager {
         );
         this.langs['scss'] = new ScssLang(
             getCSSLanguageService(), this.docManager
+        );
+        this.langs['yml'] = new YmlLang(
+            this.docManager
         );
 
 
@@ -273,8 +271,14 @@ export class LangManager {
                 }
             ]
             const completionItems = snippetsMap.map((item) => {
+                let textToInsert: string = this.savedSnippets[item.label];
+                if (item.label === 'default') {
+                    textToInsert = textToInsert.replace('{{name}}',
+                        basename(docIdentifier.uri)
+                    );
+                }
                 return {
-                    insertText: this.savedSnippets[item.label],
+                    insertText: textToInsert,
                     label: item.label,
                     detail: item.detail,
                     insertTextFormat: InsertTextFormat.Snippet
@@ -355,8 +359,18 @@ export class LangManager {
         const document = this.getByURI(uri);
         // first return document
         yield document;
-        for (const languageId in this.langs) {
-            const lang = this.langs[languageId];
+        const langs = [];
+        document.regions.forEach(region => {
+            const id = region.languageId;
+            if (this.langs[id]) {
+                langs.push(
+                    id
+                );
+            }
+
+        })
+        for (const languageId in langs) {
+            const lang = this.langs[langs[languageId]];
             yield lang;
         }
 
