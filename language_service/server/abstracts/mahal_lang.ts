@@ -59,7 +59,9 @@ export abstract class MahalLang {
 
     abstract id: string;
     abstract doComplete(document: MahalDoc, position: Position, jsLang: JsLang): CompletionList | Promise<CompletionList>;
-    abstract doHover(document: MahalDoc, position: Position): Hover;
+    doHover(document: MahalDoc, position: Position): Hover {
+        return null;
+    }
     doResolve(item: CompletionItem): CompletionItem {
         return null;
     }

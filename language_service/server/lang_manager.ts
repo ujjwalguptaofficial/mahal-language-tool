@@ -17,7 +17,7 @@ import {
 } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
 import { CodeActionData, ISemanticTokenData } from './interfaces';
-import { CssLang, HtmlLang, JsLang } from './langs';
+import { CssLang, HtmlLang, JsLang, ScssLang } from './langs';
 import { DocManager } from './managers';
 import { MahalDoc } from './models';
 import { TypeScriptService } from './services';
@@ -45,6 +45,9 @@ export class LangManager {
             htmlService, this.docManager
         );
         this.langs['css'] = new CssLang(
+            getCSSLanguageService(), this.docManager
+        );
+        this.langs['scss'] = new ScssLang(
             getCSSLanguageService(), this.docManager
         );
 
@@ -199,7 +202,7 @@ export class LangManager {
             position
         );
 
-        // console.log("languageId", languageId);
+        console.log("languageId", languageId);
         const activeLang = this.langs[languageId];
         return { activeLang, document };
     }

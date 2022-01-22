@@ -421,7 +421,7 @@
     "tag-stuff": {
       "patterns": [
         {
-          "include": "#mahal-directives"
+          "include": "#mahal-attributes"
         },
         {
           "include": "#tag-id-attribute"
@@ -444,8 +444,8 @@
       "name": "string.unquoted.html",
       "match": "(?<==)(?:[^\\s<>/'\"]|/(?!>))+"
     },
-    "mahal-directives": {
-      "name": "meta.directive.mahal",
+    "mahal-attributes": {
+      "name": "meta.attribute.mahal",
       "begin": "(?:\\b(v-)|(:|@|#))([a-zA-Z0-9\\-_]+)(?:\\:([a-zA-Z\\-_]+))?(?:\\.([a-zA-Z\\-_]+))*\\s*(=)",
       "end": "(?<='|\")|(?=[\\s<>`])",
       "captures": {
