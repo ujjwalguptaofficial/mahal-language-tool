@@ -53,14 +53,50 @@
                 "extensions": [
                     ".mahal"
                 ],
-                "configuration": "./language-configuration.json"
+                "configuration": "./lang-config/language-configuration.json"
+            },
+            {
+                "id": "mahal-html",
+                "aliases": [
+                    "Mahal-html"
+                ],
+                "configuration": "./lang-config/mahal-html-language-configuration.json"
             }
         ],
         "grammars": [
             {
                 "language": "mahal",
                 "scopeName": "source.mhl",
-                "path": "./syntaxes/mahal.tmLanguage.json"
+                "path": "./syntaxes/mahal.tmLanguage.json",
+                "embeddedLanguages": {
+                    "text.html.basic": "html",
+                    "text.html.mahal-html": "mahal-html",
+                    "text.jade.slm": "slm",
+                    "text.pug": "jade",
+                    "text.haml": "haml",
+                    "text.slim": "slim",
+                    "text.html.liquid": "liquid",
+                    "source.css": "css",
+                    "source.css.scss": "scss",
+                    "source.css.less": "less",
+                    "source.css.postcss": "mahal-postcss",
+                    "source.sass": "sass",
+                    "source.stylus": "stylus",
+                    "source.js": "javascript",
+                    "source.ts": "typescript",
+                    "source.coffee": "coffeescript",
+                    "text.html.markdown": "md",
+                    "source.yaml": "yaml",
+                    "source.json": "json"
+                }
+            },
+            {
+                "language": "mahal-html",
+                "scopeName": "text.html.mahal-html",
+                "path": "./syntaxes/mahal-html.tmLanguage.json",
+                "embeddedLanguages": {
+                    "source.js": "javascript"
+                }
             }
         ]
     },

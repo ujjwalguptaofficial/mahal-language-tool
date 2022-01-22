@@ -1,7 +1,54 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "Mahal",
+	"fileTypes": [
+		"mahal"
+	],
+	"uuid": "2d2b3a5e-8017-43df-889a-c00d889abb15",
 	"patterns": [
+		{
+			"begin": "(<)(html)(?![^/>]*/>\\s*$)",
+			"beginCaptures": {
+				"1": {
+					"name": "punctuation.definition.tag.begin.html"
+				},
+				"2": {
+					"name": "entity.name.tag.ui.html"
+				}
+			},
+			"end": "^(</)(html)(>)",
+			"endCaptures": {
+				"1": {
+					"name": "punctuation.definition.tag.begin.html"
+				},
+				"2": {
+					"name": "entity.name.tag.ui.html"
+				},
+				"3": {
+					"name": "punctuation.definition.tag.end.html"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#tag-stuff"
+				},
+				{
+					"contentName": "text.html.mahal-html",
+					"begin": "(>)",
+					"beginCaptures": {
+						"1": {
+							"name": "punctuation.definition.tag.end.html"
+						}
+					},
+					"end": "(?=^</html>)",
+					"patterns": [
+						{
+							"include": "text.html.mahal-html"
+						}
+					]
+				}
+			]
+		},
 		{
 			"include": "#keywords"
 		},
@@ -11,10 +58,12 @@
 	],
 	"repository": {
 		"keywords": {
-			"patterns": [{
-				"name": "keyword.control.mahal",
-				"match": "\\b(if|while|for|return)\\b"
-			}]
+			"patterns": [
+				{
+					"name": "keyword.control.mahal",
+					"match": "\\b(if|while|for|return)\\b"
+				}
+			]
 		},
 		"strings": {
 			"name": "string.quoted.double.mahal",
