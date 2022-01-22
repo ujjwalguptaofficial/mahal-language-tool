@@ -1,30 +1,4 @@
 {
-    "Mahal single file component": {
-        "prefix": "mhl",
-        "body": [
-            "<html>\n$0\n</html>\n",
-            "<script>\n\n</script>\n",
-            "<style>\n\n</style>\n"
-        ]
-    },
-    "html": {
-        "prefix": "html",
-        "body": [
-            "<html>\n$0\n</html>\n"
-        ]
-    },
-    "script": {
-        "prefix": "script",
-        "body": [
-            "<script>\n$0\n</script>\n"
-        ]
-    },
-    "style": {
-        "prefix": "style",
-        "body": [
-            "<style>\n$0\n</style>\n"
-        ]
-    },
     "folding": {
         "markers": {
             "start": "^<(html|style|script)[^>]*>",

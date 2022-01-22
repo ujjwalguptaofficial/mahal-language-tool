@@ -5,13 +5,14 @@ import {
     ColorInformation,
     ColorPresentation,
     ColorPresentationParams,
-    CompletionItem, Connection, DefinitionParams,
+    CompletionItem, CompletionList, Connection, DefinitionParams,
     Diagnostic,
     DidChangeTextDocumentParams,
     DidOpenTextDocumentParams,
     DocumentColorParams,
     DocumentFormattingParams,
     DocumentHighlightParams, DocumentSymbolParams, InitializeParams,
+    InsertTextFormat,
     Position, ReferenceParams, SemanticTokensBuilder, SemanticTokensParams,
     SignatureHelpParams, SymbolInformation, TextDocumentIdentifier, TextEdit,
 } from 'vscode-languageserver/node';
@@ -22,6 +23,8 @@ import { DocManager } from './managers';
 import { MahalDoc } from './models';
 import { TypeScriptService } from './services';
 import { getCSSLanguageService } from "vscode-css-languageservice";
+import path from 'path';
+import { readFileSync } from 'fs';
 
 export class LangManager {
 
@@ -29,10 +32,24 @@ export class LangManager {
 
     };
 
+    savedSnippets = {
+        default: '',
+        html: '',
+        css: '',
+        style: '',
+        scss: ''
+    }
+
     docManager: DocManager;
 
     constructor(public connection: Connection) {
         this.initializeLangs();
+
+        const serverModule = path.join(__dirname);
+        //  'language_service', 'server', 'snippets');
+
+        console.log('snippets path', serverModule, connection.client);
+
     }
 
     initializeLangs() {
@@ -63,12 +80,33 @@ export class LangManager {
         );
     }
 
+    initSnippets(absolutePath) {
+        const snippets = path.join(absolutePath, 'snippets');
+        const getText = (fileName: string) => {
+            return readFileSync(path.join(snippets, fileName), {
+                encoding: 'utf-8'
+            });
+        };
+
+        const defaultText = getText('default.mahal')
+        const htmlText = getText('html.mahal');
+        const cssText = getText('style.mahal');
+        const scssText = getText('scss.mahal');
+
+        this.savedSnippets.default = defaultText;
+        this.savedSnippets.html = htmlText;
+        this.savedSnippets.css = cssText;
+        this.savedSnippets.style = cssText;
+        this.savedSnippets.scss = scssText;
+    }
+
     listen(params: InitializeParams) {
         const connection = this.connection;
 
         const docManager = this.docManager;
 
         docManager.setEditorConfig(params.initializationOptions.clientConfig);
+        this.initSnippets(params.initializationOptions.absolutePath);
         this.initJsLang(params);
 
         connection.onDidOpenTextDocument((params: DidOpenTextDocumentParams) => {
@@ -214,6 +252,36 @@ export class LangManager {
         if (activeLang) {
             return activeLang.doComplete(document, position, this.langs['javascript'] as any);
         }
+        else {
+            const snippetsMap: Array<{ label: string; detail: string; }> = [
+                {
+                    label: "default",
+                    detail: "mahal default snippets"
+                },
+                {
+                    label: "style",
+                    detail: "style snippets",
+                }, {
+                    label: "css",
+                    detail: "css snippets",
+                }, {
+                    label: "scss",
+                    detail: "scss snippets",
+                }, {
+                    label: "html",
+                    detail: "html snippets",
+                }
+            ]
+            const completionItems = snippetsMap.map((item) => {
+                return {
+                    insertText: this.savedSnippets[item.label],
+                    label: item.label,
+                    detail: item.detail,
+                    insertTextFormat: InsertTextFormat.Snippet
+                } as CompletionItem;
+            })
+            return CompletionList.create(completionItems, false);
+        }
     }
 
     getCodeActions(params: CodeActionParams) {
@@ -283,7 +351,7 @@ export class LangManager {
         }
     }
 
-    *eachLang(uri: string) {
+    * eachLang(uri: string) {
         const document = this.getByURI(uri);
         // first return document
         yield document;

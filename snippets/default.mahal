@@ -1,0 +1,16 @@
+<html>
+${0}
+</html>
+
+<script>
+import { Component } from "mahal";
+
+export default class extends Component{
+
+}
+
+</script>
+
+<style>
+
+</style>

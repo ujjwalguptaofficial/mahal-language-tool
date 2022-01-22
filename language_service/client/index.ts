@@ -80,7 +80,8 @@ export function activate(context: ExtensionContext) {
                 script: {
                     format: workspace.getConfiguration('javascript').get('format')
                 }
-            }
+            },
+            absolutePath: context.asAbsolutePath('')
         },
     };
 
