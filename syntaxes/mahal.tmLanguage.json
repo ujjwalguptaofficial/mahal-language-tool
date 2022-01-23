@@ -7,6 +7,35 @@
 	"uuid": "2d2b3a5e-8017-43df-889a-c00d889abb15",
 	"patterns": [
 		{
+			"begin": "(---)",
+			"beginCaptures": {
+				"1": {
+					"name": "punctuation.definition.tag.begin.script"
+				}
+			},
+			"end": "^(---)",
+			"endCaptures": {
+				"1": {
+					"name": "punctuation.definition.tag.end.script"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#tag-stuff"
+				},
+				{
+					"contentName": "text.mahal-doc",
+					"begin": "(---)",
+					"beginCaptures": {
+						"1": {
+							"name": "punctuation.definition.tag.end.html"
+						}
+					},
+					"end": "(---)"
+				}
+			]
+		},
+		{
 			"begin": "(<)(html)(?![^/>]*/>\\s*$)",
 			"beginCaptures": {
 				"1": {
@@ -77,5 +106,5 @@
 			]
 		}
 	},
-	"scopeName": "source.mhl"
+	"scopeName": "source.mahal"
 }

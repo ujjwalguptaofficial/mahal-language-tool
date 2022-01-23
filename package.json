@@ -61,16 +61,24 @@
                     "Mahal-html"
                 ],
                 "configuration": "./lang-config/mahal-html-language-configuration.json"
+            },
+            {
+                "id": "mahal-doc",
+                "aliases": [
+                    "Mahal-doc"
+                ],
+                "configuration": "./lang-config/mahal-doc-language-configuration.json"
             }
         ],
         "grammars": [
             {
                 "language": "mahal",
-                "scopeName": "source.mhl",
+                "scopeName": "source.mahal",
                 "path": "./syntaxes/mahal.tmLanguage.json",
                 "embeddedLanguages": {
                     "text.html.basic": "html",
                     "text.html.mahal-html": "mahal-html",
+                    "text.mahal-doc": "mahal-doc",
                     "text.jade.slm": "slm",
                     "text.pug": "jade",
                     "text.haml": "haml",
@@ -94,6 +102,14 @@
                 "language": "mahal-html",
                 "scopeName": "text.html.mahal-html",
                 "path": "./syntaxes/mahal-html.tmLanguage.json",
+                "embeddedLanguages": {
+                    "source.js": "javascript"
+                }
+            },
+            {
+                "language": "mahal-doc",
+                "scopeName": "text.mahal-doc",
+                "path": "./syntaxes/mahal.yaml.tmLanguage.json",
                 "embeddedLanguages": {
                     "source.js": "javascript"
                 }
