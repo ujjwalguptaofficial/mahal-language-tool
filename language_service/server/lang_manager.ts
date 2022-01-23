@@ -238,7 +238,7 @@ export class LangManager {
             position
         );
 
-        console.log("languageId", languageId);
+        // console.log("languageId", languageId);
         const activeLang = this.langs[languageId];
         return { activeLang, document };
     }

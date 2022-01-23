@@ -157,12 +157,6 @@ export class MahalDoc {
                 default:
                     const commentText = scanner.getTokenText().trim();
                     if (commentText.substring(0, 3) === '---' && commentText.substr(-3) === '---') {
-                        console.log('comment', commentText, scanner.getTokenOffset(),
-                            scanner.getTokenEnd(),
-                            "last three",
-                            `"${commentText.substring(-3)}"`,
-                            commentText.substr(-3) === '---'
-                        );
                         regions.push({
                             start: scanner.getTokenOffset() + 3,
                             end: commentText.length - 3,
