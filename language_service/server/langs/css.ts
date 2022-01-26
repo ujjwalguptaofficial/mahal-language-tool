@@ -1,4 +1,4 @@
-import { Color, ColorPresentation, Range, SymbolInformation } from "vscode-languageserver/node";
+import { Color, ColorInformation, ColorPresentation, Diagnostic, Range, SymbolInformation } from "vscode-languageserver/node";
 import { LanguageService } from "vscode-css-languageservice";
 import { CompletionList, FormattingOptions, Hover, TextEdit } from "vscode-languageserver/node";
 import { Position } from "vscode-languageserver-textdocument";
@@ -50,29 +50,28 @@ export class CssLang extends MahalLang {
     }
 
     validate(document: MahalDoc, cancellationToken?: any) {
-        const region = this.getRegion(document);
-        if (!region) {
-            return [];
-        }
-        const doc = this.getRegionDoc(document, region);
-
-        const results = this.langService.doValidation(
-            doc,
-            this.langService.parseStylesheet(doc)
-        );
-        const pos = document.positionAt(region.start);
-        results.forEach(item => {
-            const range = item.range
-            range.start.line += pos.line;
-            range.end.line += pos.line;
-        })
+        const results: Diagnostic[] = [];
+        this.getRegions(document).forEach(region => {
+            const doc = this.getRegionDoc(document, region);
+            const result = this.langService.doValidation(
+                doc,
+                this.langService.parseStylesheet(doc)
+            );
+            const pos = document.positionAt(region.start);
+            result.forEach(item => {
+                const range = item.range
+                range.start.line += pos.line;
+                range.end.line += pos.line;
+                results.push(item);
+            })
+        });
         return results;
     }
 
 
     getDocumentSymbols(document: MahalDoc) {
         const symbolInfoResult: SymbolInformation[] = [];
-        document.regions.forEach(region => {
+        this.getRegions(document).forEach(region => {
             const doc = this.getRegionDoc(document, region);
 
             const results = this.langService.findDocumentSymbols(
@@ -132,44 +131,46 @@ export class CssLang extends MahalLang {
     }
 
     getColors(document: MahalDoc) {
-        const region = this.getRegion(document);
-        if (!region) {
-            return [];
-        }
-        const doc = this.getRegionDoc(document, region);
+        const results: ColorInformation[] = [];
+        this.getRegions(document).forEach(region => {
+            const doc = this.getRegionDoc(document, region);
 
-        // console.log("getColors", doc.getText());
-        const result = this.langService.findDocumentColors(
-            doc,
-            this.langService.parseStylesheet(doc)
-        );
-        // console.log("getColors", result.length);
-        const pos = document.positionAt(region.start);
-        result.forEach(item => {
-            const range = item.range
-            range.start.line += pos.line;
-            range.end.line += pos.line;
+            // console.log("getColors", doc.getText());
+            const result = this.langService.findDocumentColors(
+                doc,
+                this.langService.parseStylesheet(doc)
+            );
+            // console.log("getColors", result.length);
+            const pos = document.positionAt(region.start);
+            result.forEach(item => {
+                const range = item.range
+                range.start.line += pos.line;
+                range.end.line += pos.line;
+                results.push(item);
+            })
         })
-        return result;
+        return results;
     }
     getColorPresentation(document: MahalDoc, color: Color, range: Range) {
 
-        const region = this.getRegion(document);
-        const doc = this.getRegionDoc(document, region);
-        // console.log("getColors", doc.getText());
-        const result = this.langService.getColorPresentations(
-            doc,
-            this.langService.parseStylesheet(doc),
-            color,
-            range
-        );
-        // console.log("getColorPresentation", result.length);
-        const pos = document.positionAt(region.start);
-        result.forEach(item => {
-            const range = item.textEdit.range
-            range.start.line += pos.line;
-            range.end.line += pos.line;
-        })
-        return result;
+        const results: ColorPresentation[] = [];
+        this.getRegions(document).forEach(region => {
+            const doc = this.getRegionDoc(document, region);
+            const result = this.langService.getColorPresentations(
+                doc,
+                this.langService.parseStylesheet(doc),
+                color,
+                range
+            );
+            // console.log("getColorPresentation", result.length);
+            const pos = document.positionAt(region.start);
+            result.forEach(item => {
+                const range = item.textEdit.range
+                range.start.line += pos.line;
+                range.end.line += pos.line;
+                results.push(item);
+            })
+        });
+        return results;
     }
 }
