@@ -239,7 +239,7 @@ export class LangManager {
         );
 
         // console.log("languageId", languageId);
-        const activeLang = this.langs[region.languageId];
+        const activeLang = this.langs[region ? region.languageId : ''];
         return { activeLang, document, region };
     }
 
@@ -250,7 +250,7 @@ export class LangManager {
         if (activeLang) {
             return activeLang.doComplete(document, position, region, this.langs['javascript'] as any);
         }
-        else {
+        else if (position.character === 0) {
             const snippetsMap: Array<{ label: string; detail: string; }> = [
                 {
                     label: "default",
