@@ -2,7 +2,7 @@ import { doComplete } from "vscode-emmet-helper";
 import { ColorPresentation, CompletionItem, CompletionList, Diagnostic, DocumentHighlight, FormattingOptions, InsertReplaceEdit, LanguageService, Range, SymbolInformation, TextDocument, TextEdit } from "vscode-html-languageservice";
 import { Position } from "vscode-languageserver-textdocument";
 import { MahalLang } from "../abstracts";
-import { ISemanticTokenData } from "../interfaces";
+import { EmbeddedRegion, ISemanticTokenData } from "../interfaces";
 import { DocManager } from "../managers";
 import { MahalDoc } from "../models";
 import { JsLang } from "../langs/js";
@@ -27,8 +27,8 @@ export class HtmlLang extends MahalLang {
     }
 
 
-    doComplete(document: MahalDoc, position: Position, jsService: JsLang) {
-        const { doc, pos } = this.getActualPosition(document, position);
+    doComplete(document: MahalDoc, position: Position, region: EmbeddedRegion, jsService: JsLang) {
+        const { doc, pos } = this.getActualPosition(document, position, region);
 
         return this.langService.doComplete2(
             doc,
@@ -75,8 +75,8 @@ export class HtmlLang extends MahalLang {
         })
     }
 
-    doHover(document: MahalDoc, position: Position) {
-        const { doc, pos } = this.getActualPosition(document, position);
+    doHover(document: MahalDoc, position: Position, region: EmbeddedRegion) {
+        const { doc, pos } = this.getActualPosition(document, position, region);
         const results = this.langService.doHover(
             doc,
             pos,
@@ -91,8 +91,8 @@ export class HtmlLang extends MahalLang {
         return results;
     }
 
-    getDocumentHighlight(document: MahalDoc, position: Position): DocumentHighlight[] {
-        const { doc, pos } = this.getActualPosition(document, position);
+    getDocumentHighlight(document: MahalDoc, position: Position, region: EmbeddedRegion): DocumentHighlight[] {
+        const { doc, pos } = this.getActualPosition(document, position, region);
         const results = this.langService.findDocumentHighlights(
             doc,
             pos,
@@ -122,7 +122,7 @@ export class HtmlLang extends MahalLang {
         if (!region) {
             return [];
         }
-        const doc = this.getDoc(document, region);
+        const doc = this.getRegionDoc(document, region);
 
         const results = this.langService.findDocumentSymbols(
             doc,
@@ -149,7 +149,7 @@ export class HtmlLang extends MahalLang {
         if (!region) {
             return [];
         }
-        const doc = this.getDoc(document, region);
+        const doc = this.getRegionDoc(document, region);
 
 
         // console.log('doc', `"${doc.getText()}"`);
@@ -200,7 +200,7 @@ export class HtmlLang extends MahalLang {
 
     validate(document: MahalDoc, cancellationToken?: any) {
         const region = this.getRegion(document);
-        const doc = this.getDoc(document, region);
+        const doc = this.getRegionDoc(document, region);
         const text = doc.getText();
         const startPos = document.positionAt(region.start);
 

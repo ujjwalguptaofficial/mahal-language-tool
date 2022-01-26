@@ -34,9 +34,8 @@ export abstract class MahalLang {
         // + ".ts";
     }
 
-    protected getActualPosition(document: MahalDoc, position: Position) {
-        const region = this.getRegion(document);
-        const doc = this.getDoc(document, region);
+    protected getActualPosition(document: MahalDoc, position: Position, region: EmbeddedRegion) {
+        const doc = this.getRegionDoc(document, region);
         const pos = doc.positionAt(document.offsetAt(position) - region.start);
         return {
             doc,
@@ -45,7 +44,7 @@ export abstract class MahalLang {
     }
 
 
-    protected getDoc(document: MahalDoc, region: EmbeddedRegion) {
+    protected getRegionDoc(document: MahalDoc, region: EmbeddedRegion) {
         return this.docManager.getEmbeddedDocument(
             document.uri,
             region
@@ -62,8 +61,8 @@ export abstract class MahalLang {
     }
 
     abstract id: string;
-    abstract doComplete(document: MahalDoc, position: Position, jsLang: JsLang): CompletionList | Promise<CompletionList>;
-    doHover(document: MahalDoc, position: Position): Hover {
+    abstract doComplete(document: MahalDoc, position: Position, region: EmbeddedRegion, jsLang: JsLang): CompletionList | Promise<CompletionList>;
+    doHover(document: MahalDoc, position: Position, region: EmbeddedRegion): Hover {
         return null;
     }
     doResolve(item: CompletionItem): CompletionItem {
@@ -87,7 +86,7 @@ export abstract class MahalLang {
     getColorPresentation(document: MahalDoc, color: Color, range: Range): ColorPresentation[] {
         return [];
     }
-    getDocumentHighlight(document: MahalDoc, position: Position): DocumentHighlight[] {
+    getDocumentHighlight(document: MahalDoc, position: Position, region: EmbeddedRegion): DocumentHighlight[] {
         return [];
     }
     getSemanticTokens(document: MahalDoc, range?: Range): ISemanticTokenData[] {

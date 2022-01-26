@@ -6,6 +6,7 @@ import { MahalDoc } from "../models";
 import { JsLang } from "./js";
 import { format } from "prettier";
 import * as emmet from 'vscode-emmet-helper';
+import { EmbeddedRegion } from "../interfaces";
 
 
 export class ScssLang extends MahalLang {
@@ -18,8 +19,8 @@ export class ScssLang extends MahalLang {
     id: string = "scss";
 
 
-    doComplete(document: MahalDoc, position: Position, jsLang: JsLang): CompletionList | Promise<CompletionList> {
-        const { doc, pos } = this.getActualPosition(document, position);
+    doComplete(document: MahalDoc, position: Position, region: EmbeddedRegion): CompletionList | Promise<CompletionList> {
+        const { doc, pos } = this.getActualPosition(document, position, region);
         const result = emmet.doComplete(doc, pos, 'scss', {
 
         });
@@ -43,7 +44,7 @@ export class ScssLang extends MahalLang {
         const regions = this.getRegions(document);
         const result: TextEdit[] = [];
         regions.forEach(region => {
-            const doc = this.getDoc(document, region);
+            const doc = this.getRegionDoc(document, region);
             const formattedString = format(doc.getText(), {
                 parser: "scss",
                 tabWidth: editorConfig.tabSize,

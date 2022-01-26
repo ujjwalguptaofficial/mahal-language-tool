@@ -3,7 +3,7 @@ import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, Completio
 import * as Previewer from '../../utils/previewer';
 import { fromTsDiagnosticCategoryToDiagnosticSeverity, getURLFromPath, isMahalFile, toSymbolKind } from "../../utils";
 import { NON_SCRIPT_TRIGGERS, SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../../constants";
-import { CodeActionData, CodeActionDataKind, ISemanticTokenOffsetData, RefactorActionData } from "../../interfaces";
+import { CodeActionData, CodeActionDataKind, EmbeddedRegion, ISemanticTokenOffsetData, RefactorActionData } from "../../interfaces";
 import { MahalDoc } from "../../models";
 import { LanguageId } from "../../types";
 import { MahalLang } from "../../abstracts";
@@ -50,14 +50,11 @@ export class JsLang extends MahalLang {
         }
     }
 
-    doComplete(document: MahalDoc, position: Position) {
+    doComplete(document: MahalDoc, position: Position, region: EmbeddedRegion) {
         this.symbolsCacheForHTML = [];
-
         const uri = document.uri;
-        // const { doc: savedDoc, regions } = this.getDoc(document);
-        const region = this.getRegion(document);//regions[0];
         const offset = document.offsetAt(position) - region.start;
-        const doc = this.getDoc(document, region);
+        const doc = this.getRegionDoc(document, region);
         const fileText = doc.getText();
 
         // console.log("saved fileText", fileText.split(""), fileText.length, `'${fileText}'`);
@@ -201,52 +198,54 @@ export class JsLang extends MahalLang {
         );
         let results: CodeAction[] = [];
         const textRange = { pos: start, end };
+        try {
+            if (fixableDiagnosticCodes.length > 0) {
+                const codeFixes = this.langService.getCodeFixesAtPosition(
+                    fileFsPath, start, end,
+                    fixableDiagnosticCodes,
+                    this.formatOptions,
+                    this.preferences
+                );
 
-        if (fixableDiagnosticCodes.length > 0) {
-            const codeFixes = this.langService.getCodeFixesAtPosition(
-                fileFsPath, start, end,
-                fixableDiagnosticCodes,
-                this.formatOptions,
-                this.preferences
-            );
-
-            codeFixes.forEach(fix => {
-                results.push({
-                    title: fix.description,
-                    kind: CodeActionKind.QuickFix,
-                    diagnostics: context.diagnostics,
-                    edit: {
-                        changes: createUriMappingForEdits(
-                            fix.changes,
-                            this,
-                            region.start
-                        )
-                    }
-                });
-                if (fix.fixAllDescription && fix.fixId) {
+                codeFixes.forEach(fix => {
                     results.push({
-                        title: fix.fixAllDescription,
+                        title: fix.description,
                         kind: CodeActionKind.QuickFix,
                         diagnostics: context.diagnostics,
-                        data: {
-                            uri,
-                            languageId: this.id,
-                            kind: CodeActionDataKind.CombinedCodeFix,
-                            textRange,
-                            fixId: fix.fixId,
-                            position: range.start,
-                            region: region
-                        } as CodeActionData
+                        edit: {
+                            changes: createUriMappingForEdits(
+                                fix.changes,
+                                this,
+                                region.start
+                            )
+                        }
                     });
-                }
-            })
-        }
+                    if (fix.fixAllDescription && fix.fixId) {
+                        results.push({
+                            title: fix.fixAllDescription,
+                            kind: CodeActionKind.QuickFix,
+                            diagnostics: context.diagnostics,
+                            data: {
+                                uri,
+                                languageId: this.id,
+                                kind: CodeActionDataKind.CombinedCodeFix,
+                                textRange,
+                                fixId: fix.fixId,
+                                position: range.start,
+                                region: region
+                            } as CodeActionData
+                        });
+                    }
+                })
+            }
+            results = [
+                ...results,
+                ...getRefactorFix(this, uri, fileFsPath, textRange, context, region, range.start),
+                ...getOrganizeImportFix(this, uri, textRange, context, region, range.start)
+            ]
+        } catch (error) {
 
-        results = [
-            ...results,
-            ...getRefactorFix(this, uri, fileFsPath, textRange, context, region, range.start),
-            ...getOrganizeImportFix(this, uri, textRange, context, region, range.start)
-        ]
+        }
 
         return results;
     }
@@ -638,7 +637,7 @@ export class JsLang extends MahalLang {
     getSemanticTokens(document: MahalDoc) {
         const uri = document.uri;
         const region = this.getRegion(document);
-        const doc = this.getDoc(document, region);
+        const doc = this.getRegionDoc(document, region);
         // const start = document.offsetAt(range.start) - region.start;
         // const end = document.offsetAt(range.end) - region.start;
         // const offset = document.offsetAt(range.start) - region.start;

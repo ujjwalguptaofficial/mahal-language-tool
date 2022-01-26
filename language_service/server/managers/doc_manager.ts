@@ -198,7 +198,7 @@ export class DocManager {
         );
     }
 
-    getLanguageAtPosition(document: MahalDoc, position: Position) {
+    getRegionAtPosition(document: MahalDoc, position: Position) {
         const regions = document.regions;
         const offset = document.offsetAt(position);
 
@@ -208,11 +208,7 @@ export class DocManager {
             }
             return false;
         })
-        if (region) {
-            return region.languageId;
-        }
-        // console.log("regions", regions);
-        // return 'unknown';
+        return region;
     }
 
 }

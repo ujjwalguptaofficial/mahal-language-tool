@@ -6,6 +6,7 @@ import { MahalDoc } from "../models";
 import { JsLang } from "./js";
 import { format, } from "prettier";
 import * as emmet from 'vscode-emmet-helper';
+import { EmbeddedRegion } from "../interfaces";
 
 
 export class YmlLang extends MahalLang {
@@ -18,8 +19,8 @@ export class YmlLang extends MahalLang {
     id: string = "yml";
 
 
-    doComplete(document: MahalDoc, position: Position, jsLang: JsLang): CompletionList | Promise<CompletionList> {
-        const { doc, pos } = this.getActualPosition(document, position);
+    doComplete(document: MahalDoc, position: Position, region: EmbeddedRegion): CompletionList | Promise<CompletionList> {
+        const { doc, pos } = this.getActualPosition(document, position, region);
         const result = emmet.doComplete(doc, pos, 'yaml', {
 
         });
@@ -44,7 +45,7 @@ export class YmlLang extends MahalLang {
         if (!region) {
             return [];
         }
-        const doc = this.getDoc(document, region);
+        const doc = this.getRegionDoc(document, region);
 
         const formattedString = format(doc.getText(), {
             parser: 'yaml',

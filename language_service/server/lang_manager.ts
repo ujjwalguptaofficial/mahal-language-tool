@@ -228,27 +228,27 @@ export class LangManager {
         return document;
     }
 
-    getActiveLang(uri: string, position: Position) {
+    getActiveDocInfo(uri: string, position: Position) {
         const document = this.getByURI(
             uri
         );
 
-        const languageId = this.docManager.getLanguageAtPosition(
+        const region = this.docManager.getRegionAtPosition(
             document,
             position
         );
 
         // console.log("languageId", languageId);
-        const activeLang = this.langs[languageId];
-        return { activeLang, document };
+        const activeLang = this.langs[region.languageId];
+        return { activeLang, document, region };
     }
 
     doComplete(docIdentifier: TextDocumentIdentifier, position: Position) {
-        const { activeLang, document } = this.getActiveLang(
+        const { activeLang, document, region } = this.getActiveDocInfo(
             docIdentifier.uri, position
         );
         if (activeLang) {
-            return activeLang.doComplete(document, position, this.langs['javascript'] as any);
+            return activeLang.doComplete(document, position, region, this.langs['javascript'] as any);
         }
         else {
             const snippetsMap: Array<{ label: string; detail: string; }> = [
@@ -289,7 +289,7 @@ export class LangManager {
     }
 
     getCodeActions(params: CodeActionParams) {
-        const { activeLang, document } = this.getActiveLang(
+        const { activeLang, document } = this.getActiveDocInfo(
             params.textDocument.uri, params.range.start
         );
         if (activeLang) {
@@ -302,7 +302,7 @@ export class LangManager {
     getCodeActionResolve(params: CodeAction) {
         const data = params.data as CodeActionData;
 
-        const { activeLang, document } = this.getActiveLang(
+        const { activeLang, document } = this.getActiveDocInfo(
             data.uri, data.position
         );
         if (activeLang) {
@@ -313,17 +313,17 @@ export class LangManager {
     }
 
     doHover(docIdentifier: TextDocumentIdentifier, position: Position) {
-        const { activeLang, document } = this.getActiveLang(
+        const { activeLang, document, region } = this.getActiveDocInfo(
             docIdentifier.uri, position
         );
 
         if (activeLang) {
-            return activeLang.doHover(document, position);
+            return activeLang.doHover(document, position, region);
         }
     }
 
     doCompletionResolve(item: CompletionItem) {
-        const { activeLang } = this.getActiveLang(
+        const { activeLang } = this.getActiveDocInfo(
             item.data.uri, item.data.position
         );
 
@@ -333,7 +333,7 @@ export class LangManager {
     }
 
     getReferences(params: ReferenceParams) {
-        const { activeLang, document } = this.getActiveLang(
+        const { activeLang, document } = this.getActiveDocInfo(
             params.textDocument.uri, params.position
         );
 
@@ -344,7 +344,7 @@ export class LangManager {
         }
     }
     getSignatureHelp(params: SignatureHelpParams) {
-        const { activeLang, document } = this.getActiveLang(
+        const { activeLang, document } = this.getActiveDocInfo(
             params.textDocument.uri, params.position
         );
 
@@ -416,18 +416,18 @@ export class LangManager {
 
     }
     getDocumentHighlight(params: DocumentHighlightParams) {
-        const { activeLang, document } = this.getActiveLang(
+        const { activeLang, document, region } = this.getActiveDocInfo(
             params.textDocument.uri, params.position
         );
         if (activeLang) {
             return activeLang.getDocumentHighlight(
-                document, params.position
+                document, params.position, region
             );
         }
     }
 
     getDefinition(params: DefinitionParams) {
-        const { activeLang, document } = this.getActiveLang(
+        const { activeLang, document } = this.getActiveDocInfo(
             params.textDocument.uri, params.position
         );
         if (activeLang) {

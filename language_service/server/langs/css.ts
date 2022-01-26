@@ -1,12 +1,12 @@
-import { Color, ColorPresentation, Range } from "vscode-languageserver/node";
+import { Color, ColorPresentation, Range, SymbolInformation } from "vscode-languageserver/node";
 import { LanguageService } from "vscode-css-languageservice";
 import { CompletionList, FormattingOptions, Hover, TextEdit } from "vscode-languageserver/node";
 import { Position } from "vscode-languageserver-textdocument";
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
 import { MahalDoc } from "../models";
-import { JsLang } from "./js";
 import { format } from "prettier";
+import { EmbeddedRegion } from "../interfaces";
 
 export class CssLang extends MahalLang {
     constructor(private langService: LanguageService,
@@ -18,8 +18,8 @@ export class CssLang extends MahalLang {
     id: string = "css";
 
 
-    doComplete(document: MahalDoc, position: Position, jsLang: JsLang): CompletionList | Promise<CompletionList> {
-        const { doc, pos } = this.getActualPosition(document, position);
+    doComplete(document: MahalDoc, position: Position, region: EmbeddedRegion): CompletionList | Promise<CompletionList> {
+        const { doc, pos } = this.getActualPosition(document, position, region);
         const result = this.langService.doComplete(
             doc, pos,
             this.langService.parseStylesheet(doc)
@@ -32,8 +32,8 @@ export class CssLang extends MahalLang {
         return result;
     }
 
-    doHover(document: MahalDoc, position: Position): Hover {
-        const { doc, pos } = this.getActualPosition(document, position);
+    doHover(document: MahalDoc, position: Position, region: EmbeddedRegion): Hover {
+        const { doc, pos } = this.getActualPosition(document, position, region);
 
         const result = this.langService.doHover(
             doc, pos,
@@ -54,7 +54,7 @@ export class CssLang extends MahalLang {
         if (!region) {
             return [];
         }
-        const doc = this.getDoc(document, region);
+        const doc = this.getRegionDoc(document, region);
 
         const results = this.langService.doValidation(
             doc,
@@ -71,27 +71,27 @@ export class CssLang extends MahalLang {
 
 
     getDocumentSymbols(document: MahalDoc) {
-        const region = this.getRegion(document);
-        if (!region) {
-            return [];
-        }
-        const doc = this.getDoc(document, region);
+        const symbolInfoResult: SymbolInformation[] = [];
+        document.regions.forEach(region => {
+            const doc = this.getRegionDoc(document, region);
 
-        const results = this.langService.findDocumentSymbols(
-            doc,
-            this.langService.parseStylesheet(doc)
-        );
-        const pos = document.positionAt(region.start);
-        results.forEach(item => {
-            const range = item.location.range
-            range.start.line += pos.line;
-            range.end.line += pos.line;
-        })
-        return results;
+            const results = this.langService.findDocumentSymbols(
+                doc,
+                this.langService.parseStylesheet(doc)
+            );
+            const pos = document.positionAt(region.start);
+            results.forEach(item => {
+                const range = item.location.range
+                range.start.line += pos.line;
+                range.end.line += pos.line;
+                symbolInfoResult.push(item);
+            })
+        });
+        return symbolInfoResult;
     }
 
-    getDocumentHighlight(document: MahalDoc, position: Position) {
-        const { doc, pos } = this.getActualPosition(document, position);
+    getDocumentHighlight(document: MahalDoc, position: Position, region: EmbeddedRegion) {
+        const { doc, pos } = this.getActualPosition(document, position, region);
         const result = this.langService.findDocumentHighlights(
             doc,
             pos,
@@ -113,7 +113,7 @@ export class CssLang extends MahalLang {
         const regions = this.getRegions(document);
         const result: TextEdit[] = [];
         regions.forEach(region => {
-            const doc = this.getDoc(document, region);
+            const doc = this.getRegionDoc(document, region);
             const formattedString = format(doc.getText(), {
                 parser: "css",
                 tabWidth: editorConfig.tabSize,
@@ -136,7 +136,7 @@ export class CssLang extends MahalLang {
         if (!region) {
             return [];
         }
-        const doc = this.getDoc(document, region);
+        const doc = this.getRegionDoc(document, region);
 
         // console.log("getColors", doc.getText());
         const result = this.langService.findDocumentColors(
@@ -155,7 +155,7 @@ export class CssLang extends MahalLang {
     getColorPresentation(document: MahalDoc, color: Color, range: Range) {
 
         const region = this.getRegion(document);
-        const doc = this.getDoc(document, region);
+        const doc = this.getRegionDoc(document, region);
         // console.log("getColors", doc.getText());
         const result = this.langService.getColorPresentations(
             doc,
