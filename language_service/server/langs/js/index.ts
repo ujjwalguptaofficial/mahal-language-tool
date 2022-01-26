@@ -57,7 +57,7 @@ export class JsLang extends MahalLang {
         // const { doc: savedDoc, regions } = this.getDoc(document);
         const region = this.getRegion(document);//regions[0];
         const offset = document.offsetAt(position) - region.start;
-        const { doc } = this.getDoc(document);
+        const doc = this.getDoc(document, region);
         const fileText = doc.getText();
 
         // console.log("saved fileText", fileText.split(""), fileText.length, `'${fileText}'`);
@@ -637,8 +637,8 @@ export class JsLang extends MahalLang {
 
     getSemanticTokens(document: MahalDoc) {
         const uri = document.uri;
-        const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
+        const doc = this.getDoc(document, region);
         // const start = document.offsetAt(range.start) - region.start;
         // const end = document.offsetAt(range.end) - region.start;
         // const offset = document.offsetAt(range.start) - region.start;

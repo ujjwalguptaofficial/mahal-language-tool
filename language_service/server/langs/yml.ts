@@ -40,11 +40,12 @@ export class YmlLang extends MahalLang {
         if (!formatConfig.enable) {
             return [];
         }
-        const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
         if (!region) {
             return [];
         }
+        const doc = this.getDoc(document, region);
+
         const formattedString = format(doc.getText(), {
             parser: 'yaml',
             tabWidth: editorConfig.tabSize,

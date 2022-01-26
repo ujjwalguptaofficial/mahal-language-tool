@@ -102,9 +102,12 @@ export class TypeScriptService {
                 }
                 else {
                     if (docManager.isDocExist(filePath)) {
-                        const { doc } = docManager.getEmbeddedDocument(
-                            getURLFromPath(filePath),
-                            'javascript'
+                        const url = getURLFromPath(filePath);
+                        const documentSaved = docManager.getByURI(url);
+                        const region = documentSaved.regions.find(q => q.languageId === 'javascript');
+                        const doc = docManager.getEmbeddedDocument(
+                            url,
+                            region
                         );
                         fileText = doc ? doc.getText() : '';
                     }

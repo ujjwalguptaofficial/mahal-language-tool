@@ -60,7 +60,7 @@ export class LangManager {
             getCSSLanguageService(), this.docManager
         );
         this.langs['scss'] = new ScssLang(
-            getCSSLanguageService(), this.docManager
+            this.docManager
         );
         this.langs['yml'] = new YmlLang(
             this.docManager

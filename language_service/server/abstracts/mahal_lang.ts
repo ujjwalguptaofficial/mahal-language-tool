@@ -1,7 +1,7 @@
 import { CompletionItem, Location, Range, CompletionList, Hover, DocumentHighlight, FormattingOptions, TextEdit, ColorPresentation, ColorInformation, Color, Diagnostic, CodeAction, Command } from "vscode-languageserver-protocol/node";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { CodeActionContext, Definition, SignatureHelp, SymbolInformation } from "vscode-languageserver/node";
-import { ISemanticTokenData } from "../interfaces";
+import { EmbeddedRegion, ISemanticTokenData } from "../interfaces";
 import { JsLang } from "../langs";
 import { DocManager } from "../managers";
 import { MahalDoc } from "../models";
@@ -35,8 +35,8 @@ export abstract class MahalLang {
     }
 
     protected getActualPosition(document: MahalDoc, position: Position) {
-        const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
+        const doc = this.getDoc(document, region);
         const pos = doc.positionAt(document.offsetAt(position) - region.start);
         return {
             doc,
@@ -45,15 +45,19 @@ export abstract class MahalLang {
     }
 
 
-    protected getDoc(document: MahalDoc) {
+    protected getDoc(document: MahalDoc, region: EmbeddedRegion) {
         return this.docManager.getEmbeddedDocument(
             document.uri,
-            this.id
+            region
         )
     }
 
+    protected getRegions(document: MahalDoc) {
+        return document.regions.filter(item => item.languageId === this.id);
+    }
+
     protected getRegion(document: MahalDoc) {
-        const languageRegions = document.regions.filter(item => item.languageId === this.id);
+        const languageRegions = this.getRegions(document);
         return languageRegions[0]
     }
 

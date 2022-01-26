@@ -1,25 +1,19 @@
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { EmbeddedRegion } from "../interfaces";
 
-export function getEmbeddedDocument(document: TextDocument, regions: EmbeddedRegion[], languageId: string, ignoreAttributeValues: boolean) {
+export function getEmbeddedDocument(document: TextDocument, region: EmbeddedRegion, ignoreAttributeValues: boolean) {
     let currentPos = 0;
     const oldContent = document.getText();
     let result = '';
     let lastSuffix = '';
-    const languageRegions = regions.filter(item => item.languageId === languageId);
-    languageRegions.forEach(region => {
-        if ((!ignoreAttributeValues || !region.attributeValue)) {
-            // result = substituteWithWhitespace(result, currentPos, region.start, oldContent, lastSuffix, getPrefix(region));
-            result += oldContent.substring(region.start, region.end);
-            currentPos = region.end;
-            lastSuffix = getSuffix(region);
-        }
-    })
-    // result = substituteWithWhitespace(result, currentPos, oldContent.length, oldContent, lastSuffix, '');
-    return {
-        doc: TextDocument.create(document.uri, languageId, document.version, result),
-        regions: languageRegions
+    if ((!ignoreAttributeValues || !region.attributeValue)) {
+        // result = substituteWithWhitespace(result, currentPos, region.start, oldContent, lastSuffix, getPrefix(region));
+        result += oldContent.substring(region.start, region.end);
+        currentPos = region.end;
+        lastSuffix = getSuffix(region);
     }
+    // result = substituteWithWhitespace(result, currentPos, oldContent.length, oldContent, lastSuffix, '');
+    return TextDocument.create(document.uri, region.languageId, document.version, result);
 }
 
 

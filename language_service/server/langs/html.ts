@@ -118,11 +118,12 @@ export class HtmlLang extends MahalLang {
     }
 
     getDocumentSymbols(document: MahalDoc): SymbolInformation[] {
-        const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
         if (!region) {
             return [];
         }
+        const doc = this.getDoc(document, region);
+
         const results = this.langService.findDocumentSymbols(
             doc,
             this.langService.parseHTMLDocument(doc)
@@ -144,12 +145,12 @@ export class HtmlLang extends MahalLang {
         if (!formatConfig.enable) {
             return [];
         }
-
-        const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
         if (!region) {
             return [];
         }
+        const doc = this.getDoc(document, region);
+
 
         // console.log('doc', `"${doc.getText()}"`);
 
@@ -198,9 +199,9 @@ export class HtmlLang extends MahalLang {
     }
 
     validate(document: MahalDoc, cancellationToken?: any) {
-        const { doc } = this.getDoc(document);
-        const text = doc.getText();
         const region = this.getRegion(document);
+        const doc = this.getDoc(document, region);
+        const text = doc.getText();
         const startPos = document.positionAt(region.start);
 
         // console.log("html validation", text);

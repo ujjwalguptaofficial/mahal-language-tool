@@ -1,5 +1,3 @@
-import { Color, ColorPresentation, Range } from "vscode-languageserver/node";
-import { LanguageService } from "vscode-css-languageservice";
 import { CompletionList, FormattingOptions, Hover, TextEdit } from "vscode-languageserver/node";
 import { Position } from "vscode-languageserver-textdocument";
 import { MahalLang } from "../abstracts";
@@ -11,7 +9,7 @@ import * as emmet from 'vscode-emmet-helper';
 
 
 export class ScssLang extends MahalLang {
-    constructor(private langService: LanguageService,
+    constructor(
         docManager: DocManager,
     ) {
         super(docManager);
@@ -42,22 +40,23 @@ export class ScssLang extends MahalLang {
         if (!formatConfig.enable) {
             return [];
         }
-        const { doc } = this.getDoc(document);
-        const region = this.getRegion(document);
-        if (!region) {
-            return [];
-        }
-        const formattedString = format(doc.getText(), {
-            parser: "scss",
-            tabWidth: editorConfig.tabSize,
+        const regions = this.getRegions(document);
+        const result: TextEdit[] = [];
+        regions.forEach(region => {
+            const doc = this.getDoc(document, region);
+            const formattedString = format(doc.getText(), {
+                parser: "scss",
+                tabWidth: editorConfig.tabSize,
+            });
+            const range = {
+                start: document.positionAt(region.start + 1),
+                // end: document.positionAt(region.end - 1)
+                end: document.positionAt(region.end)
+            }
+            result.push(
+                TextEdit.replace(range, formattedString)
+            );
         });
-        const range = {
-            start: document.positionAt(region.start + 1),
-            // end: document.positionAt(region.end - 1)
-            end: document.positionAt(region.end)
-        }
-        return [
-            TextEdit.replace(range, formattedString)
-        ];
+        return result;
     }
 }

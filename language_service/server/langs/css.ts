@@ -50,11 +50,12 @@ export class CssLang extends MahalLang {
     }
 
     validate(document: MahalDoc, cancellationToken?: any) {
-        const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
         if (!region) {
             return [];
         }
+        const doc = this.getDoc(document, region);
+
         const results = this.langService.doValidation(
             doc,
             this.langService.parseStylesheet(doc)
@@ -70,11 +71,12 @@ export class CssLang extends MahalLang {
 
 
     getDocumentSymbols(document: MahalDoc) {
-        const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
         if (!region) {
             return [];
         }
+        const doc = this.getDoc(document, region);
+
         const results = this.langService.findDocumentSymbols(
             doc,
             this.langService.parseStylesheet(doc)
@@ -108,31 +110,34 @@ export class CssLang extends MahalLang {
         if (!formatConfig.enable) {
             return [];
         }
-        const { doc } = this.getDoc(document);
-        const region = this.getRegion(document);
-        if (!region) {
-            return [];
-        }
-        const formattedString = format(doc.getText(), {
-            parser: "css",
-            tabWidth: editorConfig.tabSize,
-        });
-        const range = {
-            start: document.positionAt(region.start + 1),
-            // end: document.positionAt(region.end - 1)
-            end: document.positionAt(region.end)
-        }
-        return [
-            TextEdit.replace(range, formattedString)
-        ];
+        const regions = this.getRegions(document);
+        const result: TextEdit[] = [];
+        regions.forEach(region => {
+            const doc = this.getDoc(document, region);
+            const formattedString = format(doc.getText(), {
+                parser: "css",
+                tabWidth: editorConfig.tabSize,
+            });
+            const range = {
+                start: document.positionAt(region.start + 1),
+                // end: document.positionAt(region.end - 1)
+                end: document.positionAt(region.end)
+            }
+            result.push(
+                TextEdit.replace(range, formattedString)
+            );
+        })
+
+        return result;
     }
 
     getColors(document: MahalDoc) {
-        const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
         if (!region) {
             return [];
         }
+        const doc = this.getDoc(document, region);
+
         // console.log("getColors", doc.getText());
         const result = this.langService.findDocumentColors(
             doc,
@@ -149,8 +154,8 @@ export class CssLang extends MahalLang {
     }
     getColorPresentation(document: MahalDoc, color: Color, range: Range) {
 
-        const { doc } = this.getDoc(document);
         const region = this.getRegion(document);
+        const doc = this.getDoc(document, region);
         // console.log("getColors", doc.getText());
         const result = this.langService.getColorPresentations(
             doc,
