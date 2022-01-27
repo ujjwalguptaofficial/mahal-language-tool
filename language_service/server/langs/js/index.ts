@@ -18,6 +18,7 @@ import { toCompletionItemKind } from "./to_completion_item_kind";
 import { getFilterText } from "./get_filter_text";
 import { getLabelAndDetailFromCompletionEntry } from "./get_label_and_detail_from_completion_entry";
 import { getTsTriggerCharacter } from "./get_ts_trigger_character";
+import { format } from "prettier";
 
 export class JsLang extends MahalLang {
     readonly id: LanguageId = 'javascript';
@@ -734,41 +735,52 @@ export class JsLang extends MahalLang {
         return definitionResults;
     }
 
-    format(doc: MahalDoc, formatParams: FormattingOptions) {
+    format(document: MahalDoc, formatParams: FormattingOptions) {
         const editorConfig = this.docManager.editorConfig;
-        const format = this.docManager.editorConfig.script.format;
-        if (!format.enable) {
+        const formatConfig = this.docManager.editorConfig.script.format;
+        if (!formatConfig.enable) {
             return [];
         }
 
-        const uri = doc.uri;
+        const uri = document.uri;
         const fileFsPath = this.getFileName(uri);
-        const region = this.getRegion(doc);
+        const region = this.getRegion(document);
+        const doc = this.getRegionDoc(document, region);
+        const formattedString = format(doc.getText(), {
+            parser: "typescript",
+            tabWidth: editorConfig.tabSize,
+        });
+        const range = {
+            start: document.positionAt(region.start + 1),
+            // end: document.positionAt(region.end - 1)
+            end: document.positionAt(region.end)
+        }
+        return [TextEdit.replace(range, formattedString)];
         return this.langService.getFormattingEditsForRange(
             fileFsPath,
             region.start,
             region.end,
             {
                 TabSize: editorConfig.tabSize,//editorConfig.tabSize,
-                ConvertTabsToSpaces: format.convertTabsToSpaces,
-                insertSpaceAfterCommaDelimiter: format.insertSpaceAfterCommaDelimiter,
-                insertSpaceAfterConstructor: format.insertSpaceAfterConstructor,
-                insertSpaceAfterFunctionKeywordForAnonymousFunctions: format.insertSpaceAfterFunctionKeywordForAnonymousFunctions,
-                InsertSpaceAfterKeywordsInControlFlowStatements: format.insertSpaceAfterKeywordsInControlFlowStatements,
-                insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces,
-                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces,
-                InsertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets,
-                InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: format.insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis,
-                InsertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: format.insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces,
-                insertSpaceAfterSemicolonInForStatements: format.insertSpaceAfterSemicolonInForStatements,
-                insertSpaceBeforeAndAfterBinaryOperators: format.insertSpaceBeforeAndAfterBinaryOperators,
+                ConvertTabsToSpaces: formatConfig.convertTabsToSpaces,
+                insertSpaceAfterCommaDelimiter: formatConfig.insertSpaceAfterCommaDelimiter,
+                insertSpaceAfterConstructor: formatConfig.insertSpaceAfterConstructor,
+                insertSpaceAfterFunctionKeywordForAnonymousFunctions: formatConfig.insertSpaceAfterFunctionKeywordForAnonymousFunctions,
+                InsertSpaceAfterKeywordsInControlFlowStatements: formatConfig.insertSpaceAfterKeywordsInControlFlowStatements,
+                insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: formatConfig.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces,
+                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: formatConfig.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces,
+                InsertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: formatConfig.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets,
+                InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: formatConfig.insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis,
+                InsertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: formatConfig.insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces,
+                insertSpaceAfterSemicolonInForStatements: formatConfig.insertSpaceAfterSemicolonInForStatements,
+                insertSpaceBeforeAndAfterBinaryOperators: formatConfig.insertSpaceBeforeAndAfterBinaryOperators,
                 IndentSize: editorConfig.indentSize,
                 IndentStyle: editorConfig.indentStyle
             }
         ).map(item => {
             return {
                 newText: item.newText,
-                range: convertRange(doc.textDoc, item.span, region.start),
+                range: convertRange(document.textDoc, item.span, region.start),
             } as TextEdit
         })
     }

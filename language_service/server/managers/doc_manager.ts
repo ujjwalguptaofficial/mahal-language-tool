@@ -12,14 +12,14 @@ interface IEditorScriptFormat {
     enable: boolean;
     convertTabsToSpaces: boolean;
     insertSpaceAfterCommaDelimiter: boolean;
-    insertSpaceAfterConstructor: false;
-    insertSpaceAfterFunctionKeywordForAnonymousFunctions: true;
-    insertSpaceAfterKeywordsInControlFlowStatements: true;
-    insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: true;
-    insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true;
-    insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: true;
-    insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false;
-    insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: false;
+    insertSpaceAfterConstructor: boolean;
+    insertSpaceAfterFunctionKeywordForAnonymousFunctions: boolean;
+    insertSpaceAfterKeywordsInControlFlowStatements: boolean;
+    insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: boolean;
+    insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: boolean;
+    insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: boolean;
+    insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: boolean;
+    insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: boolean;
     insertSpaceAfterSemicolonInForStatements: true;
     insertSpaceBeforeAndAfterBinaryOperators: true;
 }
@@ -62,7 +62,7 @@ export class DocManager {
             insertSpaceAfterKeywordsInControlFlowStatements: true,
             insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: true,
             insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true,
-            insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: true,
+            insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: false,
             insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: false,
             insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: false,
             insertSpaceAfterSemicolonInForStatements: true,
