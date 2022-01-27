@@ -250,26 +250,32 @@ export class LangManager {
         if (activeLang) {
             return activeLang.doComplete(document, position, region, this.langs['javascript'] as any);
         }
-        else if (position.character === 0) {
-            const snippetsMap: Array<{ label: string; detail: string; }> = [
+        else {
+            let snippetsMap: Array<{ label: string; detail: string; }> = [
                 {
                     label: "default",
                     detail: "mahal default snippets"
-                },
-                {
-                    label: "style",
-                    detail: "style snippets",
-                }, {
-                    label: "css",
-                    detail: "css snippets",
-                }, {
-                    label: "scss",
-                    detail: "scss snippets",
-                }, {
-                    label: "html",
-                    detail: "html snippets",
                 }
-            ]
+            ];
+            if (position.character === 0) {
+                snippetsMap = [
+                    ...snippetsMap,
+                    {
+                        label: "style",
+                        detail: "style snippets",
+                    }, {
+                        label: "css",
+                        detail: "css snippets",
+                    }, {
+                        label: "scss",
+                        detail: "scss snippets",
+                    }, {
+                        label: "html",
+                        detail: "html snippets",
+                    }
+                ]
+            }
+
             const completionItems = snippetsMap.map((item) => {
                 let textToInsert: string = this.savedSnippets[item.label];
                 if (item.label === 'default') {

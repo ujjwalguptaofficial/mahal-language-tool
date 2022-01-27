@@ -105,11 +105,16 @@ export class TypeScriptService {
                         const url = getURLFromPath(filePath);
                         const documentSaved = docManager.getByURI(url);
                         const region = documentSaved.regions.find(q => q.languageId === 'javascript');
-                        const doc = docManager.getEmbeddedDocument(
-                            url,
-                            region
-                        );
-                        fileText = doc ? doc.getText() : '';
+                        if (region) {
+                            const doc = docManager.getEmbeddedDocument(
+                                url,
+                                region
+                            );
+                            fileText = doc.getText();
+                        }
+                        else {
+                            fileText = '';
+                        }
                     }
                     else {
                         fileText = host.readFile(filePath)
