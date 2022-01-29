@@ -2,7 +2,7 @@ import path from "path";
 import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode, resolveModuleName, Extension, ModuleResolutionHost, ModuleResolutionKind, createModuleResolutionCache, ModuleKind, ResolvedModuleFull } from "typescript";
 import { InitializeParams } from "vscode-languageserver/node";
 import { DocManager } from "../managers";
-import { getCompilationSetting, getURLFromPath, getFilePathFromURL, isMahalFile } from "../utils";
+import { getCompilationSetting, getURLFromPath, getFilePathFromURL, isMahalFile, getRealMahalFilePath } from "../utils";
 
 export class TypeScriptService {
     workSpaceDir: string;
@@ -160,8 +160,7 @@ export class TypeScriptService {
             },
             resolveModuleNames: (moduleNames: string[], containingFile: string) => {
                 // console.log('moduleNames', moduleNames);
-                const moduleHost: ModuleResolutionHost = {
-                    fileExists: host.fileExists,
+                const moduleResolutionHost: ModuleResolutionHost = {
                     directoryExists: host.directoryExists,
                     readFile: host.readFile,
                     getCurrentDirectory: host.getCurrentDirectory,
@@ -169,39 +168,40 @@ export class TypeScriptService {
                     useCaseSensitiveFileNames: true,
                     // trace: (s => {
                     //     console.log('s', s);
-                    // })
+                    // }),
+                    fileExists(fileName) {
+                        return host.fileExists(
+                            getRealMahalFilePath(fileName)
+                        );
+                    }
                 };
                 return moduleNames.map(moduleName => {
                     if (isMahalFile(moduleName)) {
-                        const dirName = path.dirname(containingFile);
-                        const absolutePath = path.join(dirName, moduleName);
-                        const moduleCache = moduleResolutionCache.getOrCreateCacheForDirectory(
-                            host.getCurrentDirectory()
-                        )
-                        const key = absolutePath;
-                        if (moduleCache.has(key, undefined)) {
-                            return moduleCache.get(key, undefined).resolvedModule;
+                        const item = resolveModuleName(
+                            moduleName,
+                            getFilePathFromURL(containingFile),
+                            this.tsConfig,
+                            moduleResolutionHost,
+                            moduleResolutionCache,
+                        );
+                        if (item.resolvedModule) {
+                            const mahalResolvedModule = item.resolvedModule;
+                            const resolvedFileName = getRealMahalFilePath(mahalResolvedModule.resolvedFileName);
+                            const resolvedSvelteModule: ResolvedModuleFull = {
+                                extension: '.mahal' as any,
+                                resolvedFileName,
+                                isExternalLibraryImport: false
+                            };
+                            return resolvedSvelteModule;
                         }
-
-                        const resolvedModuleFull: ResolvedModuleFull = {
-                            isExternalLibraryImport: false,
-                            extension: '.mahal' as any,
-                            resolvedFileName: absolutePath
-                        }
-                        moduleCache.set(key, undefined, {
-                            resolvedModule: resolvedModuleFull
-                        })
-                        return resolvedModuleFull;
                     }
                     const item = resolveModuleName(
                         moduleName,
                         getFilePathFromURL(containingFile),
                         this.tsConfig,
-                        moduleHost,
+                        moduleResolutionHost,
                         moduleResolutionCache,
                     );
-                    // return null;
-                    // console.log("item", item);
                     return item.resolvedModule;
                 })
             },
