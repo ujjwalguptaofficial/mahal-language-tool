@@ -98,7 +98,7 @@ export class TypeScriptService {
 
                 let fileText;
                 if (filePath.includes('node_modules')) {
-                    fileText = sys.readFile(getFilePathFromURL(filePath)) || '';
+                    fileText = sys.readFile(getFilePathFromURL(filePath));
                 }
                 else {
                     if (docManager.isDocExist(filePath)) {
@@ -123,7 +123,7 @@ export class TypeScriptService {
 
                 // console.log("scriptSnapShpt", uri, filePath, fileText, Array.from(docManager.docs.keys()));
                 // console.log("fileText", fileText.length);
-                return ScriptSnapshot.fromString(fileText);
+                return ScriptSnapshot.fromString(fileText || '');
             },
             getScriptVersion: (filePath) => {
                 if (filePath.includes('node_modules')) {

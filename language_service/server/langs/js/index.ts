@@ -129,6 +129,12 @@ export class JsLang extends MahalLang {
             // console.log("completon item", completionItem);
             return completionItem;
         });
+        // items.push({
+        //     label: "import modules",
+        //     detail: "import modules",
+        //     insertText: 'import {} from "${0}"',
+        //     insertTextFormat: InsertTextFormat.Snippet
+        // })
         // console.log("items", items.map(item => item.label));
         return CompletionList.create(items, items.length <= 0);
 

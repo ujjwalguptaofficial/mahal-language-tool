@@ -2,6 +2,7 @@
     "name": "mahal-language-tool",
     "displayName": "Mahal Language tool",
     "description": "Support for mahal framework",
+    "icon": "assets/logos/mahal.png",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.60.0"
@@ -53,7 +54,11 @@
                 "extensions": [
                     ".mahal"
                 ],
-                "configuration": "./lang-config/language-configuration.json"
+                "configuration": "./lang-config/language-configuration.json",
+                "icon": {
+                    "light": "./assets/logos/mahal.png",
+                    "dark": "./assets/logos/mahal.png"
+                }
             },
             {
                 "id": "mahal-html",
