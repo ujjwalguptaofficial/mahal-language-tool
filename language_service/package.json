@@ -14,7 +14,7 @@
   "dependencies": {
     "@types/node": "^16.10.1",
     "@types/vscode": "^1.60.0",
-    "mahal-html-compiler": "^0.10.0",
+    "mahal-html-compiler": "^0.18.0",
     "prettier": "^2.5.1",
     "ts-loader": "^7.0.1",
     "tslint": "^6.1.3",
