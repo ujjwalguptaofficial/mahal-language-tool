@@ -20,7 +20,7 @@ export const getCompilationSetting = (tsConfig: CompilerOptions) => {
         }
     })
 
-    tsConfig.moduleResolution = getModuleResolutionKind(tsConfig.moduleResolution as any);
+    tsConfig.moduleResolution = getModuleResolutionKind(tsConfig.moduleResolution || '' as any);
 
     return {
         ...defaultCompilerOptions,
@@ -34,5 +34,7 @@ function getModuleResolutionKind(moduleResolution: string) {
             return ModuleResolutionKind.Classic;
         case "node":
             return ModuleResolutionKind.NodeJs;
+        default:
+            return ModuleResolutionKind.NodeNext;
     }
 }
