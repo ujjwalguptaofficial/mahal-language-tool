@@ -1,7 +1,24 @@
 *.vsix
-node_modules
-# language_service/node_modules
+# node_modules
+node_modules/.cache/
+node_modules/typescript/lib/tsc.js
+node_modules/typescript/lib/tsserver.js
+node_modules/typescript/lib/tsserverlibrary.js
+node_modules/typescript/lib/typescriptServices.js
+node_modules/.bin
+
+
+language_service/node_modules
 *.env
 language_service/client
 language_service/server
-webpack
+language_service/webpack/
+build_helper/
+
+**/*.map
+**/tsconfig.json
+**/tsconfig.**.json
+**/tslint.json
+**/yarn.lock
+
+.vscode

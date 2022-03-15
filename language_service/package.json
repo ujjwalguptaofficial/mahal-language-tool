@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "mahal-html-compiler": "^0.18.0",
+    "mahal-html-compiler": "^1.1.1",
     "prettier": "^2.5.1",
     "typescript": "^4.5.2",
     "vscode-css-languageservice": "^5.1.6",
