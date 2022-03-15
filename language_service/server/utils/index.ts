@@ -6,3 +6,4 @@ export * from "./get_file_path_from_url";
 export * from "./get_compilation_setting";
 export * from "./is_mahal_file";
 export * from "./from_ts_diagnostic_to_dignostic";
+export * from "./logger";

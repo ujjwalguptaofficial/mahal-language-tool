@@ -16,7 +16,7 @@ export class TypeScriptService {
 
     constructor(params: InitializeParams, private docManager: DocManager) {
         const workspace = params.workspaceFolders;
-        if (workspace.length === 0) {
+        if (workspace.length > 0) {
             const activeWorkSpace = workspace[0];
             this.workSpaceDir = getFilePathFromURL(activeWorkSpace.uri);
         }

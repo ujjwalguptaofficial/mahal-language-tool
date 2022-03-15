@@ -65,8 +65,6 @@ export class LangManager {
         this.langs['yml'] = new YmlLang(
             this.docManager
         );
-
-
     }
 
     initJsLang(params: InitializeParams) {
