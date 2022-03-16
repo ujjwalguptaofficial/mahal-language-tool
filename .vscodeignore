@@ -22,3 +22,4 @@ build_helper/
 **/yarn.lock
 
 .vscode
+.vscode-test
