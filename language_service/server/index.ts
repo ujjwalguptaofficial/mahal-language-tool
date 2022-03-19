@@ -1,6 +1,7 @@
 import { CodeActionKind, createConnection, ProposedFeatures, SemanticTokenModifiers, SemanticTokensLegend, SemanticTokenTypes, TextDocumentSyncKind } from "vscode-languageserver/node";
 import { TokenModifier, TokenType } from "./constants";
 import { LangManager } from "./lang_manager";
+import { initLogger } from "./utils";
 
 
 
@@ -47,7 +48,7 @@ export function getSemanticTokenLegends(): SemanticTokensLegend {
 }
 
 connection.onInitialize((params) => {
-    // console.log("init option", params.initializationOptions.clientConfig);
+    initLogger(params.initializationOptions.absolutePath);
     langManager.listen(params);
 
     return {

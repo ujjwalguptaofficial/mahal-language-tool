@@ -79,7 +79,7 @@ export function activate(context: ExtensionContext) {
             clientConfig: {
                 script: {
                     format: workspace.getConfiguration('javascript').get('format')
-                }
+                },
             },
             absolutePath: context.asAbsolutePath('')
         },
