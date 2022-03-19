@@ -1,7 +1,7 @@
 ---
 name : {{name}}
 description :
-dateCreated :  
+dateCreated : {{date}}
 ---
 
 <html>

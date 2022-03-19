@@ -26,7 +26,7 @@ import { getCSSLanguageService } from "vscode-css-languageservice";
 import path from 'path';
 import { readFileSync } from 'fs';
 import { basename } from "path";
-
+import { DateTime } from "luxon";
 export class LangManager {
 
     langs: { [id: string]: MahalLang } = {
@@ -279,7 +279,7 @@ export class LangManager {
                 if (item.label === 'default') {
                     textToInsert = textToInsert.replace('{{name}}',
                         basename(docIdentifier.uri)
-                    );
+                    ).replace('{{date}}', DateTime.now().toFormat('MMMM dd, yyyy'))
                 }
                 return {
                     insertText: textToInsert,
