@@ -19,6 +19,7 @@ import { getFilterText } from "./get_filter_text";
 import { getLabelAndDetailFromCompletionEntry } from "./get_label_and_detail_from_completion_entry";
 import { getTsTriggerCharacter } from "./get_ts_trigger_character";
 import { format } from "prettier";
+import { pathToFileURL } from "url";
 
 export class JsLang extends MahalLang {
     readonly id: LanguageId = 'javascript';
@@ -730,7 +731,7 @@ export class JsLang extends MahalLang {
                 program
             );
             definitionResults.push({
-                uri: getURLFromPath(d.fileName),
+                uri: pathToFileURL(d.fileName).toString(),
                 range: convertRange(
                     definitionTargetDoc,
                     d.textSpan,
