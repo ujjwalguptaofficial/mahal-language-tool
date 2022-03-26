@@ -23,7 +23,7 @@ export class TypeScriptService {
         else {
             this.workSpaceDir = process.cwd()
         }
-        // console.log('workSpaceDir', this.workSpaceDir);
+        console.log('workSpaceDir', this.workSpaceDir);
 
         this.tsConfig = this.getCompilerOptions_();
         // this.registerFileEvents_();
@@ -98,12 +98,12 @@ export class TypeScriptService {
 
                 let fileText;
                 if (filePath.includes('node_modules')) {
-                    fileText = sys.readFile(getFilePathFromURL(filePath));
+                    fileText = sys.readFile(filePath);
                 }
                 else {
                     if (docManager.isDocExist(filePath)) {
                         const url = getURLFromPath(filePath);
-                        const documentSaved = docManager.getByURI(url);
+                        const documentSaved = docManager.getByPath(filePath);
                         const region = documentSaved.regions.find(q => q.languageId === 'javascript');
                         if (region) {
                             const doc = docManager.getEmbeddedDocument(
@@ -111,6 +111,7 @@ export class TypeScriptService {
                                 region
                             );
                             fileText = doc.getText();
+                            // console.log("getScriptSnapshot filePath", filePath, fileText);
                         }
                         else {
                             fileText = '';
@@ -138,24 +139,25 @@ export class TypeScriptService {
                 return version.toString();
             },
             fileExists: (fileName) => {
-                const value = sys.fileExists(getFilePathFromURL(fileName));
+                // const filePath = getFilePathFromURL(fileName);
+                const value = sys.fileExists(fileName);
                 return value;
             },
             directoryExists: (directory) => {
-                const value = sys.directoryExists(getFilePathFromURL(directory));
+                const value = sys.directoryExists(directory);
                 return value;
             },
             readDirectory: (filePath) => {
-                const value = sys.readDirectory(getFilePathFromURL(filePath));
+                const value = sys.readDirectory(filePath);
                 return value;
             },
-            readFile: (filePath) => {
-                const value = sys.readFile(getFilePathFromURL(filePath));
+            readFile: (filePath, encoding) => {
+                const value = sys.readFile(filePath, encoding);
                 return value;
             },
             useCaseSensitiveFileNames: () => true,
             getDirectories: (filePath: string) => {
-                const value = sys.getDirectories(getFilePathFromURL(filePath));
+                const value = sys.getDirectories(filePath);
                 return value;
             },
             resolveModuleNames: (moduleNames: string[], containingFile: string) => {
@@ -170,16 +172,17 @@ export class TypeScriptService {
                     //     console.log('s', s);
                     // }),
                     fileExists(fileName) {
-                        return host.fileExists(
+                        const result = host.fileExists(
                             getRealMahalFilePath(fileName)
                         );
+                        return result;
                     }
                 };
                 return moduleNames.map(moduleName => {
                     if (isMahalFile(moduleName)) {
                         const item = resolveModuleName(
                             moduleName,
-                            getFilePathFromURL(containingFile),
+                            containingFile,
                             this.tsConfig,
                             moduleResolutionHost,
                             moduleResolutionCache,
@@ -197,7 +200,7 @@ export class TypeScriptService {
                     }
                     const item = resolveModuleName(
                         moduleName,
-                        getFilePathFromURL(containingFile),
+                        containingFile,
                         this.tsConfig,
                         moduleResolutionHost,
                         moduleResolutionCache,
