@@ -23,3 +23,5 @@ build_helper/
 
 .vscode
 .vscode-test
+logs
+*.logs
