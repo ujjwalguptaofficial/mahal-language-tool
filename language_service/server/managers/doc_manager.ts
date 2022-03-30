@@ -4,7 +4,7 @@ import { LanguageService } from "vscode-html-languageservice";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, FileChangeType, Position, TextDocumentContentChangeEvent } from "vscode-languageserver/node";
 import { DOC_EVENT } from "../enums";
-import { EmbeddedRegion } from "../interfaces";
+import { EmbeddedRegion, IAppConfig } from "../interfaces";
 import { MahalDoc } from "../models";
 import { getEmbeddedDocument, getFilePathFromURL } from "../utils";
 
@@ -43,10 +43,10 @@ export class DocManager {
 
     private eventBus_ = new EventEmitter();
 
-    private languageService: LanguageService
+    private appConfig: IAppConfig;
 
-    constructor(languageService: LanguageService) {
-        this.languageService = languageService;
+    constructor(appConfig: IAppConfig) {
+        this.appConfig = appConfig;
     }
 
     editorConfig: IEditorConfig;
@@ -118,7 +118,7 @@ export class DocManager {
     save(document: TextDocument) {
         this.docs.set(
             getFilePathFromURL(document.uri),
-            new MahalDoc(this.languageService, document)
+            new MahalDoc(this.appConfig, document)
         )
     }
 

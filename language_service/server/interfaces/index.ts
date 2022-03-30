@@ -1,3 +1,4 @@
+import { LanguageService } from "vscode-html-languageservice";
 import { Position } from "vscode-languageserver/node";
 import { LanguageId } from "../types";
 import { EmbeddedRegion } from "./embedded_region";
@@ -39,3 +40,13 @@ export interface OrganizeImportsActionData extends BaseCodeActionData {
 }
 
 export type CodeActionData = RefactorActionData | CombinedFixActionData | OrganizeImportsActionData;
+
+export interface IAppConfig {
+  workspaceUri: string;
+  hmlLanguageService: LanguageService;
+
+  project: {
+    language: string;
+  }
+
+}

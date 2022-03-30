@@ -17,7 +17,7 @@ import {
     SignatureHelpParams, SymbolInformation, TextDocumentIdentifier, TextEdit,
 } from 'vscode-languageserver/node';
 import { MahalLang } from './abstracts';
-import { CodeActionData, ISemanticTokenData } from './interfaces';
+import { CodeActionData, IAppConfig, ISemanticTokenData } from './interfaces';
 import { CssLang, HtmlLang, JsLang, ScssLang, YmlLang } from './langs';
 import { DocManager } from './managers';
 import { MahalDoc } from './models';
@@ -47,10 +47,19 @@ export class LangManager {
         this.initializeLangs();
     }
 
+    config: IAppConfig = {
+        workspaceUri: '',
+        hmlLanguageService: null as any,
+        project: {
+            language: 'js'
+        }
+    }
+
     initializeLangs() {
         const htmlService = getLanguageService();
+        this.config.hmlLanguageService = htmlService;
         this.docManager = new DocManager(
-            htmlService
+            this.config
         );
 
         this.langs['html'] = new HtmlLang(
@@ -68,12 +77,18 @@ export class LangManager {
     }
 
     initJsLang(params: InitializeParams) {
-        const jsService = new TypeScriptService(params,
+        const service = new TypeScriptService(params,
             this.docManager
-        ).getLangService();
+        );
+        const jsService = service.getLangService();
         this.langs['javascript'] = new JsLang(
             jsService, this.docManager
         );
+
+        this.config.workspaceUri = service.workSpaceDir;
+
+        const packageInfo = service.getPackageFile() as any;
+        this.config.project.language = packageInfo.project?.language;
     }
 
     initSnippets(absolutePath) {

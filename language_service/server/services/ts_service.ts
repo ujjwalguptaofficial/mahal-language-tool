@@ -30,6 +30,22 @@ export class TypeScriptService {
         this.host = this.createHost_();
     }
 
+    getPackageFile() {
+        const packagePath = findConfigFile(this.workSpaceDir, sys.fileExists, 'package.json');
+        let packageInfo = {
+             
+        };
+        if (packagePath) {
+            const content = sys.readFile(packagePath);
+            try {
+                packageInfo = JSON.parse(content);
+            } catch (error) {
+
+            }
+        };
+        return packageInfo;
+    }
+
     private getCompilerOptions_() {
         const tsConfigPath = findConfigFile(this.workSpaceDir, sys.fileExists, 'tsconfig.json') ||
             findConfigFile(this.workSpaceDir, sys.fileExists, 'jsconfig.json');

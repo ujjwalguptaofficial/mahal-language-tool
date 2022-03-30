@@ -153,9 +153,11 @@ export class JsLang extends MahalLang {
 
         const region = this.getRegion(document);
 
+
         let rawScriptDiagnostics = [
             ...program.getSyntacticDiagnostics(sourceFile, cancellationToken),
-            ...program.getSemanticDiagnostics(sourceFile, cancellationToken),
+            ...document.scriptLanguage === 'ts' ?
+                program.getSemanticDiagnostics(sourceFile, cancellationToken) : [],
             ...this.langService.getSuggestionDiagnostics(fileFsPath)
         ];
 

@@ -1,7 +1,7 @@
 import { LanguageService, Scanner, TokenType } from "vscode-html-languageservice";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { TextDocumentContentChangeEvent, Range, Position } from "vscode-languageserver/node";
-import { EmbeddedRegion } from "../interfaces";
+import { EmbeddedRegion, IAppConfig } from "../interfaces";
 import { LanguageId } from "../types";
 
 
@@ -11,7 +11,7 @@ export class MahalDoc {
 
     textDoc: TextDocument
 
-    constructor(private languageService: LanguageService, document: TextDocument) {
+    constructor(private appConfig: IAppConfig, document: TextDocument) {
         this.setTextDoc(
             document
         )
@@ -20,7 +20,7 @@ export class MahalDoc {
     setTextDoc(document: TextDocument) {
         this.textDoc = document;
         this.regions = this.getDocumentRegions(
-            this.languageService, document
+            document
         )
     }
 
@@ -47,6 +47,8 @@ export class MahalDoc {
     get languageId(): string {
         return this.textDoc.languageId;
     }
+
+    scriptLanguage = 'js';
 
     applyEdit(version: number, changes: TextDocumentContentChangeEvent[]): void {
         let content = this.getText();
@@ -89,7 +91,10 @@ export class MahalDoc {
 
 
 
-    private getDocumentRegions(languageService: LanguageService, document: TextDocument) {
+    private getDocumentRegions(document: TextDocument) {
+        const languageService = this.appConfig.hmlLanguageService;
+        const language = this.appConfig.project.language;
+
         const regions: EmbeddedRegion[] = [];
         const text = document.getText();
         const scanner = languageService.createScanner(text);
@@ -113,8 +118,9 @@ export class MahalDoc {
                     languageIdFromType = '';
                     break;
                 case TokenType.Script:
+                    this.scriptLanguage = languageIdFromType || language;
                     regions.push({
-                        languageId: languageIdFromType ? languageIdFromType : 'javascript',
+                        languageId: 'javascript',
                         start: scanner.getTokenOffset(),
                         end: scanner.getTokenEnd(),
                     });
@@ -179,12 +185,12 @@ export function removeQuotes(str: string) {
 
 function getLanguageIdFromLangAttr(lang: string): LanguageId {
     let languageIdFromType = removeQuotes(lang);
-    if (languageIdFromType === 'jade') {
-        languageIdFromType = 'pug';
-    }
-    if (languageIdFromType === 'ts') {
-        languageIdFromType = 'typescript';
-    }
+    // if (languageIdFromType === 'jade') {
+    //     languageIdFromType = 'pug';
+    // }
+    // if (languageIdFromType === 'ts') {
+    //     languageIdFromType = 'typescript';
+    // }
     return languageIdFromType as LanguageId;
 }
 
