@@ -27,6 +27,7 @@ import path from 'path';
 import { readFileSync } from 'fs';
 import { basename } from "path";
 import { DateTime } from "luxon";
+import { logger } from './utils';
 export class LangManager {
 
     langs: { [id: string]: MahalLang } = {
@@ -261,7 +262,11 @@ export class LangManager {
             docIdentifier.uri, position
         );
         if (activeLang) {
-            return activeLang.doComplete(document, position, region, this.langs['javascript'] as any);
+            try {
+                return activeLang.doComplete(document, position, region, this.langs['javascript'] as any);
+            } catch (error) {
+                this.onError(error);
+            }
         }
         else {
             let snippetsMap: Array<{ label: string; detail: string; }> = [
@@ -337,8 +342,16 @@ export class LangManager {
         );
 
         if (activeLang) {
-            return activeLang.doHover(document, position, region);
+            try {
+                return activeLang.doHover(document, position, region);
+            } catch (error) {
+                this.onError(error);
+            }
         }
+    }
+
+    onError(error) {
+        logger.error(`message: ${error.message}, stack: ${error.stack}`);
     }
 
     doCompletionResolve(item: CompletionItem) {
@@ -347,7 +360,11 @@ export class LangManager {
         );
 
         if (activeLang) {
-            return activeLang.doResolve(item);
+            try {
+                return activeLang.doResolve(item);
+            } catch (error) {
+                this.onError(error);
+            }
         }
     }
 
@@ -357,9 +374,13 @@ export class LangManager {
         );
 
         if (activeLang) {
-            return activeLang.getReferences(
-                document, params.position
-            );
+            try {
+                return activeLang.getReferences(
+                    document, params.position
+                );
+            } catch (error) {
+                this.onError(error);
+            }
         }
     }
     getSignatureHelp(params: SignatureHelpParams) {
@@ -439,9 +460,13 @@ export class LangManager {
             params.textDocument.uri, params.position
         );
         if (activeLang) {
-            return activeLang.getDocumentHighlight(
-                document, params.position, region
-            );
+            try {
+                return activeLang.getDocumentHighlight(
+                    document, params.position, region
+                );
+            } catch (error) {
+                this.onError(error);
+            }
         }
     }
 
@@ -450,9 +475,13 @@ export class LangManager {
             params.textDocument.uri, params.position
         );
         if (activeLang) {
-            return activeLang.getDefinition(
-                document, params.position
-            );
+            try {
+                return activeLang.getDefinition(
+                    document, params.position
+                );
+            } catch (error) {
+                this.onError(error);
+            }
         }
 
     }
@@ -496,13 +525,17 @@ export class LangManager {
         var lang = langs.next()
         let symbols: TextEdit[] = [];
         while (!lang.done) {
-            symbols = symbols.concat(
-                (lang.value as MahalLang).
-                    format(
-                        document,
-                        params.options
-                    )
-            )
+            try {
+                symbols = symbols.concat(
+                    (lang.value as MahalLang).
+                        format(
+                            document,
+                            params.options
+                        )
+                )
+            } catch (error) {
+                this.onError(error);
+            }
             lang = langs.next();
         }
         return symbols;
