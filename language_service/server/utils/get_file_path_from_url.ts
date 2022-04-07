@@ -1,5 +1,7 @@
 import { platform } from "os";
-import { URI } from 'vscode-uri';
+import { Uri } from "vscode";
+import { URI, Utils } from 'vscode-uri';
+
 
 const IS_WINDOWS = platform() === 'win32';
 export const getFilePathFromURL = (documentUri: string) => {
@@ -20,4 +22,9 @@ export const getURLFromPath = (fsPath: string) => {
 
     }
     return fsPath;
+}
+
+export const joinPath = (path1: Uri, ...paths) => {
+    // const allPaths = paths;
+    return Utils.joinPath(path1, ...paths);
 }

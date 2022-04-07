@@ -16,7 +16,7 @@ export class YmlLang extends MahalLang {
         super(docManager);
     }
 
-    id: string = "yml";
+    id = "yml";
 
 
     doComplete(document: MahalDoc, position: Position, region: EmbeddedRegion): CompletionList | Promise<CompletionList> {

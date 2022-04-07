@@ -1,7 +1,7 @@
-import { CompletionEntry, Node, CompletionsTriggerCharacter, displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression, IndentStyle, CancellationToken, flattenDiagnosticMessageText, getSupportedCodeFixes, FileTextChanges, UserPreferences, FormatCodeSettings } from "typescript";
+import { displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression, IndentStyle, CancellationToken, flattenDiagnosticMessageText, getSupportedCodeFixes, FileTextChanges, UserPreferences, FormatCodeSettings } from "typescript";
 import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition, FormattingOptions, TextEdit, DiagnosticTag, Diagnostic, CodeActionContext, CodeAction, CodeActionKind } from "vscode-languageserver/node";
 import * as Previewer from '../../utils/previewer';
-import { fromTsDiagnosticCategoryToDiagnosticSeverity, getURLFromPath, isMahalFile, toSymbolKind } from "../../utils";
+import { fromTsDiagnosticCategoryToDiagnosticSeverity, getURLFromPath, isMahalFile, joinPath, toSymbolKind } from "../../utils";
 import { NON_SCRIPT_TRIGGERS, SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT, TokenEncodingConsts, TokenModifier, TokenType } from "../../constants";
 import { CodeActionData, CodeActionDataKind, EmbeddedRegion, ISemanticTokenOffsetData, RefactorActionData } from "../../interfaces";
 import { MahalDoc } from "../../models";
@@ -20,7 +20,8 @@ import { getLabelAndDetailFromCompletionEntry } from "./get_label_and_detail_fro
 import { getTsTriggerCharacter } from "./get_ts_trigger_character";
 import { format } from "prettier";
 import { pathToFileURL } from "url";
-
+import { TypeScriptService } from "../../services/index";
+import { parse } from "yaml";
 export class JsLang extends MahalLang {
     readonly id: LanguageId = 'javascript';
 
@@ -35,11 +36,15 @@ export class JsLang extends MahalLang {
 
     formatOptions: FormatCodeSettings;
 
+    langService: LanguageService;
+
     constructor(
-        public langService: LanguageService,
+        public service: TypeScriptService,
         docManager: DocManager,
     ) {
         super(docManager);
+        this.langService = service.getLangService();
+
         this.supportedCodeFixCodes = new Set(
             getSupportedCodeFixes().map(Number).filter(x => !isNaN(x))
         );
@@ -314,10 +319,66 @@ export class JsLang extends MahalLang {
         const uri = document.uri;
         const region = this.getRegion(document);
         const offset = document.offsetAt(position) - region.start;
+
         const info = this.langService.getQuickInfoAtPosition(
             this.getFileName(uri), offset
         )
+        // console.log('info', info);
         if (info) {
+            if (info.kindModifiers === 'export' && info.documentation.length <= 0) {
+                const definitions = this.langService.getDefinitionAtPosition(
+                    this.getFileName(uri), offset
+                );
+                // console.log("pos", definitions);
+                const mahalDefinition = definitions.find(item => {
+                    return isMahalFile(item.fileName)
+                });
+                if (mahalDefinition) {
+                    // console.log('filename', mahalDefinition.fileName,
+                    //     // pathToFileURL(mahalDefinition.fileName).pathname
+                    //     joinPath(this.service.workSpaceDirAsURI, mahalDefinition.fileName)
+                    // );
+                    const importFilePath = joinPath(this.service.workSpaceDirAsURI, mahalDefinition.fileName)
+
+                    const mahalFile = this.docManager.getByPath(importFilePath.path);
+                    // console.log('mahalfile', mahalFile);
+                    // console.log('keys', Array.from(this.docManager.docs.keys()));
+                    if (mahalFile) {
+                        const ymlRegion = this.getRegions(mahalFile, 'yml')[0];
+                        if (ymlRegion) {
+                            const ymlDoc = this.getRegionDoc(
+                                mahalFile, ymlRegion
+                            );
+                            try {
+                                const parseResult = parse(ymlDoc.getText());
+                                const desc = parseResult.description;
+                                // console.log('parseResult',parseResult)
+                                if (desc) {
+                                    info.documentation.push({
+                                        text: desc,
+                                        kind: MarkupKind.Markdown
+                                    })
+                                    const tags = info.tags || [];
+                                    tags.push({
+                                        name: 'name',
+                                        text: parseResult.name || ''
+                                    })
+                                    tags.push({
+                                        name: 'dateCreated',
+                                        text: parseResult.dateCreated || ''
+                                    });
+                                    info.tags = tags;
+                                }
+
+                            } catch (error) {
+                                console.error('error in parsing yaml', error);
+                            }
+                        }
+                    }
+                }
+                //   this.getFile  
+            }
+
             let hoverMdDoc = '';
             const doc = Previewer.plain(
                 displayPartsToString(info.documentation));

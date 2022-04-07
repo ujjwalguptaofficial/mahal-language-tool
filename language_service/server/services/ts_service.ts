@@ -1,5 +1,6 @@
 import path from "path";
 import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode, resolveModuleName, Extension, ModuleResolutionHost, ModuleResolutionKind, createModuleResolutionCache, ModuleKind, ResolvedModuleFull } from "typescript";
+import { URI } from "vscode-uri";
 import { InitializeParams } from "vscode-languageserver/node";
 import { DocManager } from "../managers";
 import { getCompilationSetting, getURLFromPath, getFilePathFromURL, isMahalFile, getRealMahalFilePath } from "../utils";
@@ -30,10 +31,14 @@ export class TypeScriptService {
         this.host = this.createHost_();
     }
 
+    get workSpaceDirAsURI() {
+        return URI.file(this.workSpaceDir);
+    }
+
     getPackageFile() {
         const packagePath = findConfigFile(this.workSpaceDir, sys.fileExists, 'package.json');
         let packageInfo = {
-             
+
         };
         if (packagePath) {
             const content = sys.readFile(packagePath);

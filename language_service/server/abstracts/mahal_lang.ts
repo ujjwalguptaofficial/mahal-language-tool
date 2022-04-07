@@ -5,6 +5,7 @@ import { EmbeddedRegion, ISemanticTokenData } from "../interfaces";
 import { JsLang } from "../langs";
 import { DocManager } from "../managers";
 import { MahalDoc } from "../models";
+import { LanguageId } from "../types";
 import { getFilePathFromURL } from "../utils";
 
 export abstract class MahalLang {
@@ -51,8 +52,9 @@ export abstract class MahalLang {
         )
     }
 
-    protected getRegions(document: MahalDoc) {
-        return document.regions.filter(item => item.languageId === this.id);
+    protected getRegions(document: MahalDoc, langId?: LanguageId) {
+        langId = langId || this.id as any;
+        return document.regions.filter(item => item.languageId === langId);
     }
 
     protected getRegion(document: MahalDoc) {
@@ -60,7 +62,7 @@ export abstract class MahalLang {
         return languageRegions[0]
     }
 
-    abstract id: string;
+    abstract id: LanguageId | string;
     abstract doComplete(document: MahalDoc, position: Position, region: EmbeddedRegion, jsLang: JsLang): CompletionList | Promise<CompletionList>;
     doHover(document: MahalDoc, position: Position, region: EmbeddedRegion): Hover {
         return null;

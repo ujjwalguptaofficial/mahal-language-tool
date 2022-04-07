@@ -81,9 +81,8 @@ export class LangManager {
         const service = new TypeScriptService(params,
             this.docManager
         );
-        const jsService = service.getLangService();
         this.langs['javascript'] = new JsLang(
-            jsService, this.docManager
+            service, this.docManager
         );
 
         this.config.workspaceUri = service.workSpaceDir;

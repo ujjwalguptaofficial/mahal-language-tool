@@ -16,7 +16,7 @@ export class ScssLang extends MahalLang {
         super(docManager);
     }
 
-    id: string = "scss";
+    id = "scss";
 
 
     doComplete(document: MahalDoc, position: Position, region: EmbeddedRegion): CompletionList | Promise<CompletionList> {

@@ -1,1 +1,1 @@
-export type LanguageId = 'javascript' | 'typescript' | 'css' | 'html' | 'sass' | 'scss';
+export type LanguageId = 'javascript' | 'typescript' | 'css' | 'html' | 'sass' | 'scss' | 'yml';
