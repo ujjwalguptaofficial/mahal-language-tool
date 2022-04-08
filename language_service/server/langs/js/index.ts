@@ -1,4 +1,4 @@
-import { displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression, IndentStyle, CancellationToken, flattenDiagnosticMessageText, getSupportedCodeFixes, FileTextChanges, UserPreferences, FormatCodeSettings } from "typescript";
+import { displayPartsToString, LanguageService, NavigationBarItem, Program, ScriptElementKind, SemanticClassificationFormat, TextSpan, SymbolFlags, isIdentifier, isPropertyAccessExpression, IndentStyle, CancellationToken, flattenDiagnosticMessageText, getSupportedCodeFixes, FileTextChanges, UserPreferences, FormatCodeSettings, DefinitionInfo, QuickInfo } from "typescript";
 import { CompletionItem, Range, CompletionItemKind, CompletionItemTag, CompletionList, Hover, InsertTextFormat, Location, MarkupContent, MarkupKind, Position, SignatureInformation, ParameterInformation, SignatureHelp, SymbolInformation, DocumentHighlightKind, DocumentHighlight, Definition, FormattingOptions, TextEdit, DiagnosticTag, Diagnostic, CodeActionContext, CodeAction, CodeActionKind } from "vscode-languageserver/node";
 import * as Previewer from '../../utils/previewer';
 import { fromTsDiagnosticCategoryToDiagnosticSeverity, getURLFromPath, isMahalFile, joinPath, toSymbolKind } from "../../utils";
@@ -315,108 +315,120 @@ export class JsLang extends MahalLang {
         return action;
     }
 
+    private addDocInDefinition(definitions: readonly DefinitionInfo[], info: QuickInfo) {
+        const mahalDefinition = definitions.find(item => {
+            return isMahalFile(item.fileName)
+        });
+        if (mahalDefinition) {
+            // console.log('filename', mahalDefinition.fileName,
+            //     // pathToFileURL(mahalDefinition.fileName).pathname
+            //     joinPath(this.service.workSpaceDirAsURI, mahalDefinition.fileName)
+            // );
+            const importFilePath = joinPath(this.service.workSpaceDirAsURI, mahalDefinition.fileName)
+
+            const mahalFile = this.docManager.getByPath(importFilePath.path);
+            // console.log('mahalfile', mahalFile);
+            // console.log('keys', Array.from(this.docManager.docs.keys()));
+            if (mahalFile) {
+                const ymlRegion = this.getRegions(mahalFile, 'yml')[0];
+                if (ymlRegion) {
+                    const ymlDoc = this.getRegionDoc(
+                        mahalFile, ymlRegion
+                    );
+                    try {
+                        const parseResult = parse(ymlDoc.getText());
+                        const desc = parseResult.description;
+                        // console.log('parseResult',parseResult)
+                        if (desc) {
+                            const indexOfDoc = info.documentation.findIndex(q => q.text === desc)
+                            if (indexOfDoc < 0) {
+                                info.documentation.push({
+                                    text: desc,
+                                    kind: MarkupKind.Markdown
+                                })
+                            };
+                            const tags = info.tags || [];
+                            tags.push({
+                                name: 'name',
+                                text: parseResult.name || ''
+                            })
+                            tags.push({
+                                name: 'dateCreated',
+                                text: parseResult.dateCreated || ''
+                            });
+                            info.tags = tags;
+                            // (definitions as any)[0] = info
+                            // Object.assign(info, info);
+                        }
+
+                    } catch (error) {
+                        console.error('error in parsing yaml', error);
+                    }
+                }
+            }
+
+        }
+    }
+
     doHover(document: MahalDoc, position: Position) {
         const uri = document.uri;
         const region = this.getRegion(document);
         const offset = document.offsetAt(position) - region.start;
+        const fileName = this.getFileName(uri);
 
         const info = this.langService.getQuickInfoAtPosition(
-            this.getFileName(uri), offset
+            fileName, offset
         )
         // console.log('info', info);
         if (info) {
-            if (info.kindModifiers === 'export' && info.documentation.length <= 0) {
+            if (info.kindModifiers === 'export') {
                 const definitions = this.langService.getDefinitionAtPosition(
-                    this.getFileName(uri), offset
+                    fileName, offset
                 );
+                this.addDocInDefinition(definitions, info);
                 // console.log("pos", definitions);
-                const mahalDefinition = definitions.find(item => {
-                    return isMahalFile(item.fileName)
-                });
-                if (mahalDefinition) {
-                    // console.log('filename', mahalDefinition.fileName,
-                    //     // pathToFileURL(mahalDefinition.fileName).pathname
-                    //     joinPath(this.service.workSpaceDirAsURI, mahalDefinition.fileName)
-                    // );
-                    const importFilePath = joinPath(this.service.workSpaceDirAsURI, mahalDefinition.fileName)
-
-                    const mahalFile = this.docManager.getByPath(importFilePath.path);
-                    // console.log('mahalfile', mahalFile);
-                    // console.log('keys', Array.from(this.docManager.docs.keys()));
-                    if (mahalFile) {
-                        const ymlRegion = this.getRegions(mahalFile, 'yml')[0];
-                        if (ymlRegion) {
-                            const ymlDoc = this.getRegionDoc(
-                                mahalFile, ymlRegion
-                            );
-                            try {
-                                const parseResult = parse(ymlDoc.getText());
-                                const desc = parseResult.description;
-                                // console.log('parseResult',parseResult)
-                                if (desc) {
-                                    info.documentation.push({
-                                        text: desc,
-                                        kind: MarkupKind.Markdown
-                                    })
-                                    const tags = info.tags || [];
-                                    tags.push({
-                                        name: 'name',
-                                        text: parseResult.name || ''
-                                    })
-                                    tags.push({
-                                        name: 'dateCreated',
-                                        text: parseResult.dateCreated || ''
-                                    });
-                                    info.tags = tags;
-                                }
-
-                            } catch (error) {
-                                console.error('error in parsing yaml', error);
-                            }
-                        }
-                    }
-                }
-                //   this.getFile  
             }
-
-            let hoverMdDoc = '';
-            const doc = Previewer.plain(
-                displayPartsToString(info.documentation));
-            if (doc) {
-                hoverMdDoc += doc + '\n\n';
-            }
-
-            if (info.tags) {
-                info.tags.forEach(x => {
-                    const tagDoc = Previewer.getTagDocumentation(x);
-                    if (tagDoc) {
-                        hoverMdDoc += tagDoc + '\n\n';
-                    }
-                });
-            }
-            let markedContents: MarkupContent;
-            if (hoverMdDoc.trim() !== '') {
-                markedContents = {
-                    kind: MarkupKind.Markdown,
-                    value: hoverMdDoc
-                } as MarkupContent;
-            }
-            else {
-                markedContents = {
-                    kind: MarkupKind.PlainText,
-                    value: displayPartsToString(info.displayParts)
-                } as MarkupContent;
-            }
-
-            return {
-                contents: markedContents,
-                range: convertRange(
-                    document.textDoc,
-                    info.textSpan,
-                    region.start
-                ),
-            } as Hover;
+            //   this.getFile  
         }
+
+        let hoverMdDoc = '';
+        const doc = Previewer.plain(
+            displayPartsToString(info.documentation));
+        if (doc) {
+            hoverMdDoc += doc + '\n\n';
+        }
+
+        if (info.tags) {
+            info.tags.forEach(x => {
+                const tagDoc = Previewer.getTagDocumentation(x);
+                if (tagDoc) {
+                    hoverMdDoc += tagDoc + '\n\n';
+                }
+            });
+        }
+        let markedContents: MarkupContent;
+        if (hoverMdDoc.trim() !== '') {
+            markedContents = {
+                kind: MarkupKind.Markdown,
+                value: hoverMdDoc
+            } as MarkupContent;
+        }
+        else {
+            markedContents = {
+                kind: MarkupKind.PlainText,
+                value: displayPartsToString(info.displayParts)
+            } as MarkupContent;
+        }
+
+        return {
+            contents: markedContents,
+            range: convertRange(
+                document.textDoc,
+                info.textSpan,
+                region.start
+            ),
+        } as Hover;
+
         return null;
     }
 
