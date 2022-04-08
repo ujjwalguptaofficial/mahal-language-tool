@@ -1,7 +1,7 @@
+import exp from "constants";
 import { platform } from "os";
-import { Uri } from "vscode";
+import path from "path";
 import { URI, Utils } from 'vscode-uri';
-
 
 const IS_WINDOWS = platform() === 'win32';
 export const getFilePathFromURL = (documentUri: string) => {
@@ -24,7 +24,11 @@ export const getURLFromPath = (fsPath: string) => {
     return fsPath;
 }
 
-export const joinPath = (path1: Uri, ...paths) => {
+export const joinPath = (path1: URI, ...paths) => {
     // const allPaths = paths;
     return Utils.joinPath(path1, ...paths);
+}
+
+export const isAbsolute = (pathValue: string) => {
+    return path.isAbsolute(pathValue);
 }

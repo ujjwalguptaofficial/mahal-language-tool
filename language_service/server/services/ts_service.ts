@@ -1,9 +1,9 @@
-import path from "path";
-import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createLanguageServiceSourceFile, createDocumentRegistry, LanguageServiceMode, resolveModuleName, Extension, ModuleResolutionHost, ModuleResolutionKind, createModuleResolutionCache, ModuleKind, ResolvedModuleFull } from "typescript";
+import { createLanguageService, LanguageServiceHost, findConfigFile, sys, CompilerOptions, getDefaultLibFilePath, ScriptSnapshot, createDocumentRegistry, resolveModuleName, ModuleResolutionHost, createModuleResolutionCache, ResolvedModuleFull } from "typescript";
 import { URI } from "vscode-uri";
 import { InitializeParams } from "vscode-languageserver/node";
 import { DocManager } from "../managers";
-import { getCompilationSetting, getURLFromPath, getFilePathFromURL, isMahalFile, getRealMahalFilePath } from "../utils";
+import { getCompilationSetting, getURLFromPath, getFilePathFromURL, isMahalFile, getRealMahalFilePath, isAbsolute, joinPath } from "../utils";
+import { TextDocument } from "vscode-languageserver-textdocument";
 
 export class TypeScriptService {
     workSpaceDir: string;
@@ -122,9 +122,10 @@ export class TypeScriptService {
                     fileText = sys.readFile(filePath);
                 }
                 else {
+                    const url = getURLFromPath(filePath);
                     if (docManager.isDocExist(filePath)) {
-                        const url = getURLFromPath(filePath);
                         const documentSaved = docManager.getByPath(filePath);
+                        // console.log('filesaved', documentSaved);
                         const region = documentSaved.regions.find(q => q.languageId === 'javascript');
                         if (region) {
                             const doc = docManager.getEmbeddedDocument(
@@ -139,7 +140,17 @@ export class TypeScriptService {
                         }
                     }
                     else {
-                        fileText = host.readFile(filePath)
+                        // console.log('going in else');
+                        fileText = host.readFile(filePath);
+                        if (isMahalFile(filePath)) {
+                            // console.log('saving file', url, filePath);
+                            // joinPath(
+                            //     this.service.workSpaceDirAsURI,
+                            // )
+                            docManager.save(
+                                TextDocument.create(url, 'mahal', 0, fileText)
+                            )
+                        }
                     }
                 }
 
@@ -208,15 +219,18 @@ export class TypeScriptService {
                             moduleResolutionHost,
                             moduleResolutionCache,
                         );
+                        // console.log('resolvedMahalModule', item);
                         if (item.resolvedModule) {
                             const mahalResolvedModule = item.resolvedModule;
                             const resolvedFileName = getRealMahalFilePath(mahalResolvedModule.resolvedFileName);
-                            const resolvedSvelteModule: ResolvedModuleFull = {
+                            const resolvedMahalModule: ResolvedModuleFull = {
                                 extension: '.mahal' as any,
-                                resolvedFileName,
+                                resolvedFileName: isAbsolute(resolvedFileName) ? resolvedFileName :
+                                    joinPath(this.workSpaceDirAsURI, resolvedFileName).fsPath,
                                 isExternalLibraryImport: false
                             };
-                            return resolvedSvelteModule;
+                            // console.log('resolvedMahalModule', resolvedMahalModule);
+                            return resolvedMahalModule;
                         }
                     }
                     const item = resolveModuleName(

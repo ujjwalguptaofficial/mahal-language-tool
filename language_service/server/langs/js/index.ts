@@ -320,13 +320,14 @@ export class JsLang extends MahalLang {
             return isMahalFile(item.fileName)
         });
         if (mahalDefinition) {
+            // console.log('mahalDefinition filename', mahalDefinition.fileName)
             // console.log('filename', mahalDefinition.fileName,
             //     // pathToFileURL(mahalDefinition.fileName).pathname
             //     joinPath(this.service.workSpaceDirAsURI, mahalDefinition.fileName)
             // );
-            const importFilePath = joinPath(this.service.workSpaceDirAsURI, mahalDefinition.fileName)
+            // const importFilePath = joinPath(this.service.workSpaceDirAsURI, mahalDefinition.fileName)
 
-            const mahalFile = this.docManager.getByPath(importFilePath.path);
+            const mahalFile = this.docManager.getByPath(mahalDefinition.fileName);
             // console.log('mahalfile', mahalFile);
             // console.log('keys', Array.from(this.docManager.docs.keys()));
             if (mahalFile) {
@@ -337,6 +338,7 @@ export class JsLang extends MahalLang {
                     );
                     try {
                         const parseResult = parse(ymlDoc.getText());
+                        if (!parseResult) return;
                         const desc = parseResult.description;
                         // console.log('parseResult',parseResult)
                         if (desc) {
@@ -379,17 +381,16 @@ export class JsLang extends MahalLang {
         const info = this.langService.getQuickInfoAtPosition(
             fileName, offset
         )
+        if (!info) return null;
         // console.log('info', info);
-        if (info) {
-            if (info.kindModifiers === 'export') {
-                const definitions = this.langService.getDefinitionAtPosition(
-                    fileName, offset
-                );
-                this.addDocInDefinition(definitions, info);
-                // console.log("pos", definitions);
-            }
-            //   this.getFile  
+        if (info.kindModifiers === 'export') {
+            const definitions = this.langService.getDefinitionAtPosition(
+                fileName, offset
+            );
+            // console.log("fileNameS", Array.from(this.docManager.docs.keys()));
+            this.addDocInDefinition(definitions, info);
         }
+        //   this.getFile  
 
         let hoverMdDoc = '';
         const doc = Previewer.plain(
@@ -429,7 +430,6 @@ export class JsLang extends MahalLang {
             ),
         } as Hover;
 
-        return null;
     }
 
     doResolve(item: CompletionItem) {
