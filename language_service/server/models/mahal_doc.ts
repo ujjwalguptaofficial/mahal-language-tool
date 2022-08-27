@@ -217,9 +217,10 @@ function scanRegion(tagName: string, scanner: Scanner, text: string): EmbeddedRe
                 start = scanner.getTokenEnd();
             }
         } else {
-            if (token === TokenType.StartTag && scanner.getTokenText() === tagName) {
+            const tokenText = scanner.getTokenText();
+            if (token === TokenType.StartTag && tokenText === tagName) {
                 unClosedTag++;
-            } else if (token === TokenType.EndTag && scanner.getTokenText() === tagName) {
+            } else if (token === TokenType.EndTag && tokenText === tagName) {
                 unClosedTag--;
                 // test leading </${tagName}>
                 const charPosBeforeEndTag = scanner.getTokenOffset() - 3;
@@ -227,7 +228,7 @@ function scanRegion(tagName: string, scanner: Scanner, text: string): EmbeddedRe
                     break;
                 }
             } else if (token === TokenType.Unknown) {
-                if (scanner.getTokenText().charAt(0) === '<') {
+                if (tokenText.charAt(0) === '<') {
                     const offset = scanner.getTokenOffset();
                     const unknownText = text.substr(offset, `</${tagName}>`.length);
                     if (unknownText === `</${tagName}>`) {
