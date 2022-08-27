@@ -350,10 +350,7 @@ export class JsLang extends MahalLang {
                                     kind: MarkupKind.Markdown
                                 })
                             };
-                            console.log('parsedResult', parsedYmlDoc);
                             delete parsedYmlDoc.desc;
-
-
                             const tags = info.tags || [];
                             for (const docKey in parsedYmlDoc) {
                                 const docValue = parsedYmlDoc[docKey] || '';
@@ -371,20 +368,6 @@ export class JsLang extends MahalLang {
                                     })()
                                 })
                             }
-                            // tags.push({
-                            //     name: 'name',
-                            //     text: parseResult.name || '',
-                            // })
-                            // tags.push({
-                            //     name: 'dateCreated',
-                            //     text: parseResult.dateCreated || ''
-                            // });
-                            // if (parseResult.props)
-                            //     tags.push({
-                            //         name: 'dateCreated',
-                            //         text: parseResult.dateCreated || ''
-                            //     });
-
                             info.tags = tags;
                             // (definitions as any)[0] = info
                             // Object.assign(info, info);
