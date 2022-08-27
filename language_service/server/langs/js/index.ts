@@ -338,9 +338,9 @@ export class JsLang extends MahalLang {
                         mahalFile, ymlRegion
                     );
                     try {
-                        const parseResult = parse(ymlDoc.getText());
-                        if (!parseResult) return;
-                        const desc = parseResult.description;
+                        const parsedYmlDoc = parse(ymlDoc.getText());
+                        if (!parsedYmlDoc) return;
+                        const desc = parsedYmlDoc.description;
                         // console.log('parseResult',parseResult)
                         if (desc) {
                             const indexOfDoc = info.documentation.findIndex(q => q.text === desc)
@@ -350,15 +350,41 @@ export class JsLang extends MahalLang {
                                     kind: MarkupKind.Markdown
                                 })
                             };
+                            console.log('parsedResult', parsedYmlDoc);
+                            delete parsedYmlDoc.desc;
+
+
                             const tags = info.tags || [];
-                            tags.push({
-                                name: 'name',
-                                text: parseResult.name || ''
-                            })
-                            tags.push({
-                                name: 'dateCreated',
-                                text: parseResult.dateCreated || ''
-                            });
+                            for (const docKey in parsedYmlDoc) {
+                                const docValue = parsedYmlDoc[docKey] || '';
+                                tags.push({
+                                    name: docKey,
+                                    text: (() => {
+                                        if (typeof docValue === 'object') {
+                                            let text = '\n'
+                                            for (const key in docValue) {
+                                                text += `**${key}** : ${docValue[key]} \n\n`;
+                                            }
+                                            return text;
+                                        }
+                                        return docValue;
+                                    })()
+                                })
+                            }
+                            // tags.push({
+                            //     name: 'name',
+                            //     text: parseResult.name || '',
+                            // })
+                            // tags.push({
+                            //     name: 'dateCreated',
+                            //     text: parseResult.dateCreated || ''
+                            // });
+                            // if (parseResult.props)
+                            //     tags.push({
+                            //         name: 'dateCreated',
+                            //         text: parseResult.dateCreated || ''
+                            //     });
+
                             info.tags = tags;
                             // (definitions as any)[0] = info
                             // Object.assign(info, info);
