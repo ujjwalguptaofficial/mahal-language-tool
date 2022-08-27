@@ -53,8 +53,6 @@ export class YmlLang extends MahalLang {
         });
         const range = {
             start: document.positionAt(region.start + (regionText[0] === '\r' ? 2 : 1)),
-            // start: document.positionAt(region.start + regionText[0] === '\r' ? 2 : 1),
-            // end: document.positionAt(region.end - 1)
             end: document.positionAt(region.end)
         }
         return [
