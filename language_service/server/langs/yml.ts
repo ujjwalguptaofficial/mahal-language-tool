@@ -1,9 +1,8 @@
-import { CompletionList, FormattingOptions, Hover, TextEdit } from "vscode-languageserver/node";
+import { CompletionList, FormattingOptions, TextEdit } from "vscode-languageserver/node";
 import { Position } from "vscode-languageserver-textdocument";
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
 import { MahalDoc } from "../models";
-import { JsLang } from "./js";
 import { format, } from "prettier";
 import * as emmet from 'vscode-emmet-helper';
 import { EmbeddedRegion } from "../interfaces";
