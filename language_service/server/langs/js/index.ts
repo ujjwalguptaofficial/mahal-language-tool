@@ -22,6 +22,7 @@ import { format } from "prettier";
 import { pathToFileURL } from "url";
 import { TypeScriptService } from "../../services/index";
 import { parse } from "yaml";
+
 export class JsLang extends MahalLang {
     readonly id: LanguageId = 'javascript';
 
@@ -828,43 +829,44 @@ export class JsLang extends MahalLang {
         const fileFsPath = this.getFileName(uri);
         const region = this.getRegion(document);
         const doc = this.getRegionDoc(document, region);
-        const formattedString = format(doc.getText(), {
+        const regionText = doc.getText();
+        const formattedString = format(regionText, {
             parser: "typescript",
             tabWidth: editorConfig.tabSize,
         });
         const range = {
-            start: document.positionAt(region.start + 1),
+            start: document.positionAt(region.start + (regionText[0] === '\r' ? 2 : 1)),
             // end: document.positionAt(region.end - 1)
             end: document.positionAt(region.end)
         }
         return [TextEdit.replace(range, formattedString)];
-        return this.langService.getFormattingEditsForRange(
-            fileFsPath,
-            region.start,
-            region.end,
-            {
-                TabSize: editorConfig.tabSize,//editorConfig.tabSize,
-                ConvertTabsToSpaces: formatConfig.convertTabsToSpaces,
-                insertSpaceAfterCommaDelimiter: formatConfig.insertSpaceAfterCommaDelimiter,
-                insertSpaceAfterConstructor: formatConfig.insertSpaceAfterConstructor,
-                insertSpaceAfterFunctionKeywordForAnonymousFunctions: formatConfig.insertSpaceAfterFunctionKeywordForAnonymousFunctions,
-                InsertSpaceAfterKeywordsInControlFlowStatements: formatConfig.insertSpaceAfterKeywordsInControlFlowStatements,
-                insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: formatConfig.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces,
-                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: formatConfig.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces,
-                InsertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: formatConfig.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets,
-                InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: formatConfig.insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis,
-                InsertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: formatConfig.insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces,
-                insertSpaceAfterSemicolonInForStatements: formatConfig.insertSpaceAfterSemicolonInForStatements,
-                insertSpaceBeforeAndAfterBinaryOperators: formatConfig.insertSpaceBeforeAndAfterBinaryOperators,
-                IndentSize: editorConfig.indentSize,
-                IndentStyle: editorConfig.indentStyle
-            }
-        ).map(item => {
-            return {
-                newText: item.newText,
-                range: convertRange(document.textDoc, item.span, region.start),
-            } as TextEdit
-        })
+        // return this.langService.getFormattingEditsForRange(
+        //     fileFsPath,
+        //     region.start,
+        //     region.end,
+        //     {
+        //         TabSize: editorConfig.tabSize,//editorConfig.tabSize,
+        //         ConvertTabsToSpaces: formatConfig.convertTabsToSpaces,
+        //         insertSpaceAfterCommaDelimiter: formatConfig.insertSpaceAfterCommaDelimiter,
+        //         insertSpaceAfterConstructor: formatConfig.insertSpaceAfterConstructor,
+        //         insertSpaceAfterFunctionKeywordForAnonymousFunctions: formatConfig.insertSpaceAfterFunctionKeywordForAnonymousFunctions,
+        //         InsertSpaceAfterKeywordsInControlFlowStatements: formatConfig.insertSpaceAfterKeywordsInControlFlowStatements,
+        //         insertSpaceAfterOpeningAndBeforeClosingEmptyBraces: formatConfig.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces,
+        //         insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: formatConfig.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces,
+        //         InsertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets: formatConfig.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets,
+        //         InsertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis: formatConfig.insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis,
+        //         InsertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces: formatConfig.insertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces,
+        //         insertSpaceAfterSemicolonInForStatements: formatConfig.insertSpaceAfterSemicolonInForStatements,
+        //         insertSpaceBeforeAndAfterBinaryOperators: formatConfig.insertSpaceBeforeAndAfterBinaryOperators,
+        //         IndentSize: editorConfig.indentSize,
+        //         IndentStyle: editorConfig.indentStyle
+        //     }
+        // ).map(item => {
+        //     return {
+        //         newText: item.newText,
+        //         range: convertRange(document.textDoc, item.span, region.start),
+        //     } as TextEdit
+        // })
     }
 }
 

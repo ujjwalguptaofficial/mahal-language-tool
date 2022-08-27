@@ -1,9 +1,8 @@
-import { CompletionList, FormattingOptions, Hover, TextEdit } from "vscode-languageserver/node";
+import { CompletionList, FormattingOptions, TextEdit } from "vscode-languageserver/node";
 import { Position } from "vscode-languageserver-textdocument";
 import { MahalLang } from "../abstracts";
 import { DocManager } from "../managers";
 import { MahalDoc } from "../models";
-import { JsLang } from "./js";
 import { format, } from "prettier";
 import * as emmet from 'vscode-emmet-helper';
 import { EmbeddedRegion } from "../interfaces";
@@ -46,14 +45,13 @@ export class YmlLang extends MahalLang {
             return [];
         }
         const doc = this.getRegionDoc(document, region);
-
-        const formattedString = format(doc.getText(), {
+        const regionText = doc.getText();
+        const formattedString = format(regionText, {
             parser: 'yaml',
             tabWidth: editorConfig.tabSize,
         });
         const range = {
-            start: document.positionAt(region.start + 1),
-            // end: document.positionAt(region.end - 1)
+            start: document.positionAt(region.start + (regionText[0] === '\r' ? 2 : 1)),
             end: document.positionAt(region.end)
         }
         return [
