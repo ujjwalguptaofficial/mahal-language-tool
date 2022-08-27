@@ -46,13 +46,14 @@ export class YmlLang extends MahalLang {
             return [];
         }
         const doc = this.getRegionDoc(document, region);
-
-        const formattedString = format(doc.getText(), {
+        const regionText = doc.getText();
+        const formattedString = format(regionText, {
             parser: 'yaml',
             tabWidth: editorConfig.tabSize,
         });
         const range = {
-            start: document.positionAt(region.start + 1),
+            start: document.positionAt(region.start + (regionText[0] === '\r' ? 2 : 1)),
+            // start: document.positionAt(region.start + regionText[0] === '\r' ? 2 : 1),
             // end: document.positionAt(region.end - 1)
             end: document.positionAt(region.end)
         }
